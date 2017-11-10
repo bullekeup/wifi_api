@@ -16,11 +16,11 @@ src/list.o : include/list.h
 src/wifi.o : include/wifi.h include/list.h include/interface.h include/nl80211.h
 src/interface.o : include/interface.h include/list.h
 
-test/list-interfaces : $(OBJS) include/wifi.h include/list.h include/interface.h include/nl80211.h
-	gcc $(CFLAGS) $(OBJS) $@.c $(LDFLAGS) -o $@
+test/list-interfaces : test/list-interfaces.c $(OBJS) include/wifi.h include/list.h include/interface.h include/nl80211.h
+	gcc $(CFLAGS) $(OBJS) $< $(LDFLAGS) -o $@
 
-test/listtest : include/linuxlist.h include/mem.h
-	gcc $(CFLAGS) $@.c $(LDFLAGS) -o $@
+test/listtest : test/listtest.c include/linuxlist.h include/mem.h
+	gcc $(CFLAGS) $< $(LDFLAGS) -o $@
 
 .PHONY : clean
 clean :
