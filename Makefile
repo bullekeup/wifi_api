@@ -1,16 +1,27 @@
-all : test/list-interface
 
-test/list-interface : test/list.o test/wifi.o test/interface.o test/list-interfaces.o
-	gcc -o test/list-interface test/list.o test/wifi.o test/interface.o test/list-interfaces.o $$(pkg-config --cflags --libs libnl-3.0 libnl-genl-3.0)
+CFLAGS = -Wall -fPIE $(shell pkg-config --cflags libnl-3.0 libnl-genl-3.0)
+LDFLAGS = $(shell pkg-config --libs libnl-3.0 libnl-genl-3.0)
+ifdef DEBUG
+CFLAGS += -ggdb
+endif
 
-test/list.o : src/list.c include/list.h
-	gcc -o test/list.o src/list.c -c
+OBJS = $(patsubst %.c,%.o,$(wildcard src/*.c))
 
-test/wifi.o : src/wifi.c include/wifi.h include/list.h include/interface.h include/nl80211.h
-	gcc -o test/wifi.o src/wifi.c -c
+all : test/list-interfaces test/listtest
 
-test/interface.o : src/interface.c include/interface.h include/list.h
-	gcc -o test/interface.o src/interface.c -c
+%.o : %.c
+	gcc -c $(CFLAGS) $< -o $@
 
-test/list-interfaces.o : test/list-interfaces.c include/wifi.h include/list.h include/interface.h include/nl80211.h
-	gcc -o test/list-interfaces.o test/list-interfaces.c -c
+src/list.o : include/list.h
+src/wifi.o : include/wifi.h include/list.h include/interface.h include/nl80211.h
+src/interface.o : include/interface.h include/list.h
+
+test/list-interfaces : $(OBJS) include/wifi.h include/list.h include/interface.h include/nl80211.h
+	gcc $(CFLAGS) $(OBJS) $@.c $(LDFLAGS) -o $@
+
+test/listtest : include/linuxlist.h include/mem.h
+	gcc $(CFLAGS) $@.c $(LDFLAGS) -o $@
+
+.PHONY : clean
+clean :
+	rm src/*.o test/listtest test/list-interfaces || true
