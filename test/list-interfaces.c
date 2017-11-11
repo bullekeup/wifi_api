@@ -6,16 +6,16 @@
 
 #include "../include/list.h"
 #include "../include/interface.h"
-//#include "../include/nl80211.h"
 #include "../include/wifi.h"
 
 int main(){
 	struct nl_sock* socket;
 	int nl_id;
-	struct list* phy_list;
-	struct list* vir_list;
-	struct list* mesh_list;
-	int max, j;
+	struct wiphy* phy_list;//list
+	struct interface* vir_list;//list
+	struct interface* mesh_list;
+	struct interface* inf;
+	struct wiphy* wp;
 	/*Create lists*/
 	socket = create_nl_socket(&nl_id);
 	if(socket == NULL){
@@ -26,19 +26,16 @@ int main(){
 	mesh_list = wifi_get_mesh_interfaces(socket, nl_id);
 	/*print*/
 	printf("wiphy:\n");
-	max = size_list(phy_list);
-	for(j=0;j<max;j++){
-		print_wi_phy(get_from_list(phy_list, j));
+	list_for_each_entry(wp, &phy_list->entry, entry){
+		print_wi_phy(wp);
 		printf("\n\n");
 	}
-	printf("--------------------------------\n\nall ainerfaces : \n");
-	max = size_list(vir_list);
-	for(j=0;j<max;j++){
-		print_if(get_from_list(vir_list, j));
+	printf("--------------------------------\n\nall interfaces : \n");
+	list_for_each_entry(inf, &vir_list->entry, entry){
+		print_if(inf);
 	}
 	printf("\n\n--------------------------------\n\nmesh interfaces : \n");
-	max = size_list(mesh_list);
-	for(j=0;j<max;j++){
-		print_if(get_from_list(vir_list, j));
+	list_for_each_entry(inf, &mesh_list->entry, entry){
+		print_if(inf);
 	}
 }

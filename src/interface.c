@@ -4,67 +4,80 @@
 
 #include "../include/interface.h"
 #include "../include/nl80211.h"
+#include "../include/linuxlist.h"
+#include "../include/mem.h"
+
+struct list_int* new_list_int(){
+	struct list_int* i = malloc(sizeof(struct list_int));
+	INIT_LIST_HEAD(&i->entry);
+	return i;
+}
+
+
 
 
 void print_wi_phy(struct wiphy* i){
-	int j;
-	printf("interface phy#%i\nfrequencies :", i->num);
-	for(j=0;i->frequencies!=NULL && j<size_list(i->frequencies); j++){
-		int* f = get_from_list(i->frequencies, j);
-		printf("\t%i MHz\n", *f);
+	struct list_int* tmp;
+	printf("interface phy#%i\nfrequencies :\n", i->num);
+	list_for_each_entry(tmp, &i->frequencies->entry, entry){
+		printf("\t %i MHz\n", tmp->i);
 	}
 	printf("types supporté: \n");
-	for(j=0;i->if_types!=NULL && j<size_list(i->if_types); j++){
-		enum nl80211_iftype* t = get_from_list(i->if_types, j);
-		printf("\ttype : %s\n", get_if_type(*t));
+	list_for_each_entry(tmp, &i->if_types->entry, entry){
+		printf("\ttype : %s\n", get_if_type(tmp->i));
 	}
 }
 
 struct wiphy* new_wi_phy(){
 	struct wiphy* i = malloc(sizeof(struct wiphy));
-	i->frequencies = new_list();
-	i->if_types = new_list();
+	INIT_LIST_HEAD(&i->entry);
+	i->frequencies = new_list_int();
+	i->if_types = new_list_int();
+	return i;
 }
 
 void del_wiphy(struct wiphy* i){
-	if(i->frequencies != NULL){
-		del_list(i->frequencies);
-		i->frequencies = NULL;
+	struct list_head* pos, *q;
+	struct list_int* tmp;
+	list_for_each_safe(pos, q, &i->frequencies->entry){
+		tmp= list_entry(pos, struct list_int, entry);
+		list_del(pos);
+		free(tmp);
 	}
-	if(i->if_types != NULL){
-		del_list(i->if_types);
-		i->if_types = NULL;
+	free(i->frequencies);
+	list_for_each_safe(pos, q, &i->if_types->entry){
+		tmp = list_entry(pos, struct list_int, entry);
+		list_del(pos);
+		free(tmp);
+	}
+	free(i->if_types);
+	free(i);
+}
+
+void del_wiphy_list(struct wiphy* i){
+	struct list_head* pos, *q;
+	struct wiphy* tmp;
+	list_for_each_safe(pos, q, &i->entry){
+		tmp = list_entry(pos, struct wiphy, entry);
+		list_del(pos);
+		del_wiphy(tmp);
 	}
 	free(i);
 }
 
-void del_wiphy_list(struct list* l){
-	int i;
-	int nb = size_list(l);
-	struct wiphy* wi_phy;
-	for(i=0; i<nb;i++){
-		wi_phy = get_from_list(l, i);
-		if(wi_phy != NULL){
-			del_wiphy(wi_phy);
-			set_in_list(l, i, NULL);
-		}
-	}
-	del_list(l);
-}
 
 
 
-
-
-void del_if(struct interface* i){
-	if(i->name != NULL){
-		free(i->name);
-	}
-	free(i);
-}
 
 void print_if(struct interface* i){
 	printf("phy#%i : %s:\n\ttype : %s\n",i->wi_phy, i->name, get_if_type(i->type));
+}
+
+struct interface* new_if(){
+	struct interface* i;
+	i = malloc(sizeof(struct interface));
+	INIT_LIST_HEAD(&i->entry);
+	return i;
 }
 
 char* get_if_type(enum nl80211_iftype i){
@@ -84,19 +97,23 @@ struct interface* clone_if(struct interface* i){
 	res->name[size_name] = '\0';
 	res->wi_phy = i->wi_phy;
 	res->type = i->type;
+	INIT_LIST_HEAD(&res->entry);
 	return res;
 }
 
-void del_if_list(struct list* l){
-	int i;
-	int nb = size_list(l);
-	struct interface* inf;
-	for(i=0; i<nb;i++){
-		inf = get_from_list(l, i);
-		if(inf != NULL){
-			del_if(inf);
-			set_in_list(l, i, NULL);
-		}
+void del_if(struct interface* i){
+	if(i->name != NULL){
+		free(i->name);
 	}
-	del_list(l);
+	free(i);
+}
+
+void del_if_list(struct interface* i){
+	struct list_head* pos, *q;
+	struct interface* tmp;
+	list_for_each_safe(pos, q, &i->entry){
+		tmp = list_entry(pos, struct interface, entry);
+		list_del(pos);
+		del_if(tmp);
+	}
 }

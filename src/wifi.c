@@ -8,7 +8,9 @@
 
 #include <stdio.h>
 
-#include "../include/list.h"
+//#include "../include/list.h"
+#include "../include/linuxlist.h"
+#include "../include/mem.h"
 #include "../include/interface.h"
 #include "../include/nl80211.h"
 #include "../include/wifi.h"
@@ -35,9 +37,10 @@ int ack_cb(struct nl_msg *msg, void *arg){
 
 
 int phy_handler(struct nl_msg *msg, void *arg){
-	struct list* l = arg;
+	struct wiphy* l = arg;//list
 	struct wiphy* inf = NULL;
-	int err, nif, j;
+	struct wiphy* tmp;
+	int err, nif;
 	struct genlmsghdr* msg_pl = nlmsg_data(nlmsg_hdr(msg));
 	struct nlattr* attrs [NL80211_ATTR_MAX + 1];
 	struct nlattr* tab_bands [NL80211_BAND_ATTR_MAX + 1];
@@ -51,23 +54,22 @@ int phy_handler(struct nl_msg *msg, void *arg){
 	}
 	/*Search of interface in the list*/
 	nif = nla_get_u32(attrs[NL80211_ATTR_WIPHY]);
-	for(j=0;j<size_list(l);j++){
-		struct wiphy* i = get_from_list(l, j);
-		if(i->num == nif){
-			inf = i;
+	list_for_each_entry(tmp, &l->entry, entry){
+		if(tmp->num == nif){
+			inf = tmp;
 		}
 	}
 	if(inf == NULL){
 		inf = new_wi_phy();
 		inf->num = nif;
-		add_in_list(l,inf);
+		list_add(&(inf->entry), &(l->entry));
 	}
 	/*add information : types supported*/
 	if (attrs[NL80211_ATTR_SUPPORTED_IFTYPES]) {
 		nla_for_each_nested(mode, attrs[NL80211_ATTR_SUPPORTED_IFTYPES], rem_mode){
-			int* iftype= malloc(sizeof(int));
-			*iftype = nla_type(mode);
-			add_in_list(inf->if_types, iftype);
+			struct list_int* iftype= new_list_int();
+			iftype->i = nla_type(mode);
+			list_add(&(iftype->entry), &(inf->if_types->entry));
 		}
 	}
 	/*add information : frequences supported (useful?)*/
@@ -78,9 +80,9 @@ int phy_handler(struct nl_msg *msg, void *arg){
 				nla_for_each_nested(freq, tab_bands[NL80211_BAND_ATTR_FREQS], rem_freq){
 					nla_parse(tab_freq, NL80211_FREQUENCY_ATTR_MAX, nla_data(freq),nla_len(freq), NULL);
 					if (tab_freq[NL80211_FREQUENCY_ATTR_FREQ]){
-						int* frequence = malloc(sizeof(int));
-						*frequence = nla_get_u32(tab_freq[NL80211_FREQUENCY_ATTR_FREQ]);
-						add_in_list(inf->frequencies, frequence);
+						struct list_int* frequence = new_list_int();
+						frequence->i = nla_get_u32(tab_freq[NL80211_FREQUENCY_ATTR_FREQ]);
+						list_add(&(frequence->entry), &(inf->frequencies->entry));
 					}
 				}
 			}
@@ -92,9 +94,9 @@ int phy_handler(struct nl_msg *msg, void *arg){
 
 int if_handler(struct nl_msg *msg, void *arg)
 {
-	struct list* l = arg;
-	struct interface* inf = malloc(sizeof(struct interface));
-	add_in_list(l, inf);
+	struct interface* l = arg;//list
+	struct interface* inf = new_if();
+	list_add(&(inf->entry), &(l->entry));
 	int err, lg;
 	struct genlmsghdr* msg_pl = nlmsg_data(nlmsg_hdr(msg));
 	struct nlattr* attrs [NL80211_ATTR_MAX + 1];
@@ -165,10 +167,10 @@ int send_recv_msg(struct nl_sock* sock, struct nl_msg* msg, struct nl_cb* cb, in
 }
 
 
-struct list* get_wi_phy(struct nl_sock* sock, int nl_id){
+struct wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct list* l = new_list();
+	struct wiphy* lwp = new_wi_phy();//list
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
@@ -185,7 +187,7 @@ struct list* get_wi_phy(struct nl_sock* sock, int nl_id){
 		nlmsg_free(msg);
 		return NULL;
 	}
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, phy_handler, l);
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, phy_handler, lwp);
 	
 	/*send message and receive answer*/
 	send_recv_msg(sock, msg, cb, nl_id);
@@ -193,14 +195,14 @@ struct list* get_wi_phy(struct nl_sock* sock, int nl_id){
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return l;
+	return lwp;
 }
 
 
-struct list* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
+struct interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct list* l = new_list();
+	struct interface* lif = new_if();//list
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
@@ -217,7 +219,7 @@ struct list* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 		nlmsg_free(msg);
 		return NULL;
 	}
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, l);
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
 	
 	/*send message and receive answer*/
 	send_recv_msg(sock, msg, cb, nl_id);
@@ -225,43 +227,37 @@ struct list* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return l;
+	return lif;
 }
 
-struct list* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id){
-	struct list* list_if;
-	struct list* list_wiphy;
-	struct list* mesh_if;
+struct interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id){
+	struct interface* list_if;//list
+	struct wiphy* list_wiphy;//list
+	struct interface* mesh_if;//list
 	struct interface* inf;
 	struct wiphy* wi_phy;
-	int i, j, k;
-	int nb_wiphy, nb_if, nb_types;
 	int mesh_supported;
 	int number_wiphy;
-	int* type;
+	struct list_int* type;
 	/*initialise list*/
 	list_if = wifi_get_interfaces(sock, nl_id);
 	list_wiphy = get_wi_phy(sock, nl_id);
-	mesh_if = new_list();
+	mesh_if = new_if();
 	/*select interfaces associated with a physical device supporting mesh*/
-	nb_wiphy = size_list(list_wiphy);
-	nb_if = size_list(list_if);
-	for(i=0; i<nb_if; i++){
-		inf = get_from_list(list_if, i);
+	list_for_each_entry(inf, &list_if->entry, entry){
 		mesh_supported = 0;
 		number_wiphy = inf->wi_phy;
-		for(j=0; j<nb_wiphy && !mesh_supported; j++){
-			wi_phy = get_from_list(list_wiphy, j);
-			nb_types = size_list(wi_phy->if_types);
-			for(k=0;number_wiphy == wi_phy->num && k<nb_types && !mesh_supported; k++){
-				type = get_from_list(wi_phy->if_types, k);
-				if(*type == NL80211_IFTYPE_MESH_POINT){
-					mesh_supported = 1;
+		list_for_each_entry(wi_phy, &list_wiphy->entry, entry){
+			if(number_wiphy == wi_phy->num){
+				list_for_each_entry(type, &wi_phy->if_types->entry, entry){
+					if(type->i == NL80211_IFTYPE_MESH_POINT){
+						mesh_supported = 1;
+					}
 				}
 			}
 		}
 		if(mesh_supported){
-			add_in_list(mesh_if, clone_if(inf));
+			list_add(&clone_if(inf)->entry, &mesh_if->entry);
 		}
 	}
 	/*free memory*/
