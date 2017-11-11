@@ -8,7 +8,6 @@
 
 #include <stdio.h>
 
-//#include "../include/list.h"
 #include "../include/linuxlist.h"
 #include "../include/mem.h"
 #include "../include/interface.h"

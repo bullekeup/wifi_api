@@ -4,8 +4,9 @@
 
 #include <stdio.h>
 
-#include "../include/list.h"
 #include "../include/interface.h"
+#include "../include/wifi.h"
+#include "../include/nl80211.h"
 #include "../include/wifi.h"
 
 int main(){

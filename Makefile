@@ -12,11 +12,10 @@ all : test/list-interfaces test/listtest
 %.o : %.c
 	gcc -c $(CFLAGS) $< -o $@
 
-src/list.o : include/list.h
-src/wifi.o : include/wifi.h include/list.h include/interface.h include/nl80211.h
-src/interface.o : include/interface.h include/list.h
+src/wifi.o : include/wifi.h include/interface.h include/nl80211.h include/linuxlist.h include/mem.h
+src/interface.o : include/interface.h include/linuxlist.h include/mem.h
 
-test/list-interfaces : test/list-interfaces.c $(OBJS) include/wifi.h include/list.h include/interface.h include/nl80211.h
+test/list-interfaces : test/list-interfaces.c $(OBJS) include/wifi.h include/interface.h include/nl80211.h include/linuxlist.h include/mem.h
 	gcc $(CFLAGS) $(OBJS) $< $(LDFLAGS) -o $@
 
 test/listtest : test/listtest.c include/linuxlist.h include/mem.h
