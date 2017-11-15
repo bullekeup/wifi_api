@@ -16,7 +16,7 @@ struct list_int* new_list_int(){
 
 
 
-void print_wi_phy(struct wiphy* i){
+void print_wi_phy(struct wifi_wiphy* i){
 	struct list_int* tmp;
 	printf("interface phy#%i\nfrequencies :\n", i->num);
 	list_for_each_entry(tmp, &i->frequencies->entry, entry){
@@ -28,15 +28,15 @@ void print_wi_phy(struct wiphy* i){
 	}
 }
 
-struct wiphy* new_wi_phy(){
-	struct wiphy* i = malloc(sizeof(struct wiphy));
+struct wifi_wiphy* new_wi_phy(){
+	struct wifi_wiphy* i = malloc(sizeof(struct wifi_wiphy));
 	INIT_LIST_HEAD(&i->entry);
 	i->frequencies = new_list_int();
 	i->if_types = new_list_int();
 	return i;
 }
 
-void del_wiphy(struct wiphy* i){
+void del_wiphy(struct wifi_wiphy* i){
 	struct list_head* pos, *q;
 	struct list_int* tmp;
 	list_for_each_safe(pos, q, &i->frequencies->entry){
@@ -54,11 +54,11 @@ void del_wiphy(struct wiphy* i){
 	free(i);
 }
 
-void del_wiphy_list(struct wiphy* i){
+void del_wiphy_list(struct wifi_wiphy* i){
 	struct list_head* pos, *q;
-	struct wiphy* tmp;
+	struct wifi_wiphy* tmp;
 	list_for_each_safe(pos, q, &i->entry){
-		tmp = list_entry(pos, struct wiphy, entry);
+		tmp = list_entry(pos, struct wifi_wiphy, entry);
 		list_del(pos);
 		del_wiphy(tmp);
 	}
@@ -69,14 +69,29 @@ void del_wiphy_list(struct wiphy* i){
 
 
 
-void print_if(struct interface* i){
-	printf("phy#%i : %s:\n\ttype : %s\n",i->wi_phy, i->name, get_if_type(i->type));
+void print_if(struct wifi_interface* i){
+	int j;
+	printf("phy#%i : %s:\n\ttype : %s\n\tmac : ",i->wi_phy, i->name, get_if_type(i->type));
+	for(j=0;j<ETH_ALEN;j++){
+		printf("%02x", i->mac[j]);
+		if(j==ETH_ALEN-1){
+			printf("\n");
+		}else{
+			printf(":");
+		}
+	}
+	
+	if(i->frequency >0){
+		printf("\tfrequency : %i\n", i->frequency);
+	}
 }
 
-struct interface* new_if(){
-	struct interface* i;
-	i = malloc(sizeof(struct interface));
+struct wifi_interface* new_if(){
+	struct wifi_interface* i;
+	i = malloc(sizeof(struct wifi_interface));
 	INIT_LIST_HEAD(&i->entry);
+	i->frequency = -1;
+	i->width = -1;
 	return i;
 }
 
@@ -89,30 +104,36 @@ char* get_if_type(enum nl80211_iftype i){
 	return names[i];
 }
 
-struct interface* clone_if(struct interface* i){
+struct wifi_interface* clone_if(struct wifi_interface* i){
+	int j;
 	int size_name = strlen(i->name);
-	struct interface* res = malloc(sizeof(struct interface));
+	struct wifi_interface* res = malloc(sizeof(struct wifi_interface));
 	res->name = malloc(sizeof(char)*(size_name+1));
 	strncpy(res->name, i->name, size_name+1);
 	res->name[size_name] = '\0';
 	res->wi_phy = i->wi_phy;
 	res->type = i->type;
 	INIT_LIST_HEAD(&res->entry);
+	res->frequency = i->frequency;
+	res->width = i->width;
+	for(j=0;j<ETH_ALEN;j++){
+		res->mac[j] = i->mac[j];
+	}
 	return res;
 }
 
-void del_if(struct interface* i){
+void del_if(struct wifi_interface* i){
 	if(i->name != NULL){
 		free(i->name);
 	}
 	free(i);
 }
 
-void del_if_list(struct interface* i){
+void del_if_list(struct wifi_interface* i){
 	struct list_head* pos, *q;
-	struct interface* tmp;
+	struct wifi_interface* tmp;
 	list_for_each_safe(pos, q, &i->entry){
-		tmp = list_entry(pos, struct interface, entry);
+		tmp = list_entry(pos, struct wifi_interface, entry);
 		list_del(pos);
 		del_if(tmp);
 	}

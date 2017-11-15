@@ -7,7 +7,7 @@ endif
 
 OBJS = $(patsubst %.c,%.o,$(wildcard src/*.c))
 
-all : test/list-interfaces test/listtest
+all : test/list-interfaces test/listtest test/info-interface
 
 %.o : %.c
 	gcc -c $(CFLAGS) $< -o $@
@@ -20,6 +20,10 @@ test/list-interfaces : test/list-interfaces.c $(OBJS) include/wifi.h include/int
 
 test/listtest : test/listtest.c include/linuxlist.h include/mem.h
 	gcc $(CFLAGS) $< $(LDFLAGS) -o $@
+	
+test/info-interface : test/info-interface.c $(OBJS) include/wifi.h include/interface.h include/nl80211.h
+	gcc $(CFLAGS) $(OBJS) $< $(LDFLAGS) -o $@
+
 
 .PHONY : clean
 clean :

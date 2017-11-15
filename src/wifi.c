@@ -6,6 +6,8 @@
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 
+#include <net/if.h>
+
 #include <stdio.h>
 
 #include "../include/linuxlist.h"
@@ -36,9 +38,9 @@ int ack_cb(struct nl_msg *msg, void *arg){
 
 
 int phy_handler(struct nl_msg *msg, void *arg){
-	struct wiphy* l = arg;//list
-	struct wiphy* inf = NULL;
-	struct wiphy* tmp;
+	struct wifi_wiphy* l = arg;//list
+	struct wifi_wiphy* inf = NULL;
+	struct wifi_wiphy* tmp;
 	int err, nif;
 	struct genlmsghdr* msg_pl = nlmsg_data(nlmsg_hdr(msg));
 	struct nlattr* attrs [NL80211_ATTR_MAX + 1];
@@ -93,10 +95,10 @@ int phy_handler(struct nl_msg *msg, void *arg){
 
 int if_handler(struct nl_msg *msg, void *arg)
 {
-	struct interface* l = arg;//list
-	struct interface* inf = new_if();
+	struct wifi_interface* l = arg;//list
+	struct wifi_interface* inf = new_if();
 	list_add(&(inf->entry), &(l->entry));
-	int err, lg;
+	int err, lg, i;
 	struct genlmsghdr* msg_pl = nlmsg_data(nlmsg_hdr(msg));
 	struct nlattr* attrs [NL80211_ATTR_MAX + 1];
 	char* name;
@@ -118,6 +120,18 @@ int if_handler(struct nl_msg *msg, void *arg)
 	/*Add type actually used*/
 	if(attrs[NL80211_ATTR_IFTYPE]){
 		inf->type = nla_get_u32(attrs[NL80211_ATTR_IFTYPE]);
+	}
+	/*Add actual frequency*/
+	if(attrs[NL80211_ATTR_WIPHY_FREQ]){
+		inf->frequency = nla_get_u32(attrs[NL80211_ATTR_WIPHY_FREQ]);
+		inf->width = nla_get_u32(attrs[NL80211_ATTR_CHANNEL_WIDTH]);
+	}
+	/*Add mac address*/
+	if(attrs[NL80211_ATTR_MAC]){
+		char* mac = (char*)nla_data(attrs[NL80211_ATTR_MAC]);
+		for(i=0;i<ETH_ALEN;i++){
+			inf->mac[i] = mac[i];
+		}
 	}
 	
 	return NL_SKIP;
@@ -166,10 +180,10 @@ int send_recv_msg(struct nl_sock* sock, struct nl_msg* msg, struct nl_cb* cb, in
 }
 
 
-struct wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
+struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct wiphy* lwp = new_wi_phy();//list
+	struct wifi_wiphy* lwp = new_wi_phy();//list
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
@@ -198,10 +212,10 @@ struct wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 }
 
 
-struct interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
+struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct interface* lif = new_if();//list
+	struct wifi_interface* lif = new_if();//list
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
@@ -229,12 +243,12 @@ struct interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	return lif;
 }
 
-struct interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id){
-	struct interface* list_if;//list
-	struct wiphy* list_wiphy;//list
-	struct interface* mesh_if;//list
-	struct interface* inf;
-	struct wiphy* wi_phy;
+struct wifi_interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id){
+	struct wifi_interface* list_if;//list
+	struct wifi_wiphy* list_wiphy;//list
+	struct wifi_interface* mesh_if;//list
+	struct wifi_interface* inf;
+	struct wifi_wiphy* wi_phy;
 	int mesh_supported;
 	int number_wiphy;
 	struct list_int* type;
@@ -263,4 +277,35 @@ struct interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id){
 	del_wiphy_list(list_wiphy);
 	del_if_list(list_if);
 	return mesh_if;
+}
+
+struct wifi_interface* wifi_get_interface_info(struct nl_sock* sock, int nl_id, char* name){
+	struct nl_msg* msg;
+	struct nl_cb* cb;
+	struct wifi_interface* lif = new_if();//list
+	
+	/*Create message*/
+	msg = nlmsg_alloc();
+	if (msg == NULL) {
+		printf("erreur dans l'allocation du message\n");
+		return NULL;
+	}
+	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_GET_INTERFACE, 0);
+	nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(name));
+	/*Create callback*/
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if(cb == NULL){
+		printf("erreur dans l'allocation du callback\n");
+		nlmsg_free(msg);
+		return NULL;
+	}
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
+	
+	/*send message and receive answer*/
+	send_recv_msg(sock, msg, cb, nl_id);
+	
+	/*free memory*/
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+	return list_first_entry_or_null(&lif->entry, struct wifi_interface, entry);
 }

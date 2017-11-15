@@ -12,11 +12,11 @@
 int main(){
 	struct nl_sock* socket;
 	int nl_id;
-	struct wiphy* phy_list;//list
-	struct interface* vir_list;//list
-	struct interface* mesh_list;
-	struct interface* inf;
-	struct wiphy* wp;
+	struct wifi_wiphy* phy_list;//list
+	struct wifi_interface* vir_list;//list
+	struct wifi_interface* mesh_list;//list
+	struct wifi_interface* inf;
+	struct wifi_wiphy* wp;
 	/*Create lists*/
 	socket = create_nl_socket(&nl_id);
 	if(socket == NULL){
