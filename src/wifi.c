@@ -188,7 +188,7 @@ struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
-		printf("erreur dans l'allocation du message\n");
+		del_wiphy_list(lwp);
 		return NULL;
 	}
 	genlmsg_put(msg, 0, 0, nl_id, 0, FLAGS, NL80211_CMD_GET_WIPHY, 0);
@@ -196,7 +196,7 @@ struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
-		printf("erreur dans l'allocation du callback\n");
+		del_wiphy_list(lwp);
 		nlmsg_free(msg);
 		return NULL;
 	}
@@ -220,7 +220,7 @@ struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
-		printf("erreur dans l'allocation du message\n");
+		del_if_list(lif);
 		return NULL;
 	}
 	genlmsg_put(msg, 0, 0, nl_id, 0, FLAGS, NL80211_CMD_GET_INTERFACE, 0);
@@ -228,7 +228,7 @@ struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
-		printf("erreur dans l'allocation du callback\n");
+		del_if_list(lif);
 		nlmsg_free(msg);
 		return NULL;
 	}
@@ -254,7 +254,14 @@ struct wifi_interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id)
 	struct list_int* type;
 	/*initialise list*/
 	list_if = wifi_get_interfaces(sock, nl_id);
+	if(list_if == NULL){
+		return NULL;
+	}
 	list_wiphy = get_wi_phy(sock, nl_id);
+	if(list_wiphy==NULL){
+		del_if_list(list_if);
+		return NULL;
+	}
 	mesh_if = new_if();
 	/*select interfaces associated with a physical device supporting mesh*/
 	list_for_each_entry(inf, &list_if->entry, entry){
@@ -279,33 +286,45 @@ struct wifi_interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id)
 	return mesh_if;
 }
 
-struct wifi_interface* wifi_get_interface_info(struct nl_sock* sock, int nl_id, char* name){
+int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, int nl_id, char* name){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
 	struct wifi_interface* lif = new_if();//list
+	struct wifi_interface* i;
+	int res = 0;
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
-		printf("erreur dans l'allocation du message\n");
-		return NULL;
+		return -1;
 	}
 	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_GET_INTERFACE, 0);
 	nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(name));
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
-		printf("erreur dans l'allocation du callback\n");
 		nlmsg_free(msg);
-		return NULL;
+		return -2;
 	}
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
 	
 	/*send message and receive answer*/
 	send_recv_msg(sock, msg, cb, nl_id);
 	
+	/*get interface and copy it to inf*/
+	i = list_first_entry_or_null(&lif->entry, struct wifi_interface, entry);
+	if(i == NULL){
+		/*name probably don't correspond to any interfaces*/
+		res = -3;
+	}else{
+		if_copy(inf, i);
+	}
+	
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return list_first_entry_or_null(&lif->entry, struct wifi_interface, entry);
+	del_if_list(lif);
+	
+	return res;
+	
 }

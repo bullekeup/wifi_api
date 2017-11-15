@@ -105,21 +105,25 @@ char* get_if_type(enum nl80211_iftype i){
 }
 
 struct wifi_interface* clone_if(struct wifi_interface* i){
-	int j;
-	int size_name = strlen(i->name);
 	struct wifi_interface* res = malloc(sizeof(struct wifi_interface));
-	res->name = malloc(sizeof(char)*(size_name+1));
-	strncpy(res->name, i->name, size_name+1);
-	res->name[size_name] = '\0';
-	res->wi_phy = i->wi_phy;
-	res->type = i->type;
-	INIT_LIST_HEAD(&res->entry);
-	res->frequency = i->frequency;
-	res->width = i->width;
-	for(j=0;j<ETH_ALEN;j++){
-		res->mac[j] = i->mac[j];
-	}
+	if_copy(res,i);
 	return res;
+}
+
+void if_copy(struct wifi_interface* dest, struct wifi_interface* src){
+	int size_name = strlen(src->name);
+	int j;
+	dest->name = malloc(sizeof(char)*(size_name+1));
+	strncpy(dest->name, src->name, size_name+1);
+	dest->name[size_name] = '\0';
+	dest->wi_phy = src->wi_phy;
+	dest->type = src->type;
+	INIT_LIST_HEAD(&dest->entry);
+	dest->frequency = src->frequency;
+	dest->width = src->width;
+	for(j=0;j<ETH_ALEN;j++){
+		dest->mac[j] = src->mac[j];
+	}
 }
 
 void del_if(struct wifi_interface* i){

@@ -21,7 +21,7 @@ int phy_handler(struct nl_msg *msg, void *arg);
 /*function called to create a list of interface
  * arg should be a struct wifi_interface*  */
 int if_handler(struct nl_msg *msg, void *arg);
-/*Create a new nl_sock and return null 
+/*Create a new nl_sock or return null 
  * *nl_id will be set to the numeric family identifier corresponding to nl80211*/
 struct nl_sock* create_nl_socket(int* nl_id);
 /*send teh msg message and wait the answer*/
@@ -34,6 +34,7 @@ struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id);
 struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id);
 /*return the list of interfaces (struct wifi_interface) which supported mesh, or NULL if a problem append*/
 struct wifi_interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id);
-struct wifi_interface* wifi_get_interface_info(struct nl_sock* sock, int nl_id, char* name);
+/*get a struct wifi_interface by his name. Return negative if an error appened*/
+int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, int nl_id, char* name);
 
 #endif /*WIFI_H*/

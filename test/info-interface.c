@@ -9,18 +9,31 @@
 #include "../include/nl80211.h"
 #include "../include/wifi.h"
 
-#define NAME "wlx000f5412d027"
+#define DEFAULT_NAME "wlx000f5412d027"
 
-int main(){
+int main(int argc, char** argv){
 	struct nl_sock* socket;
-	int nl_id;
 	struct wifi_interface* inf;
-	/*Create lists*/
+	int nl_id, err;
+	char* name;
+	if(argc>1){
+		name = argv[1];
+	}else{
+		name=DEFAULT_NAME;
+	}
+	/*get interface*/
 	socket = create_nl_socket(&nl_id);
 	if(socket == NULL){
 		return -1;
 	}
-	inf = wifi_get_interface_info(socket, nl_id, NAME);
+	inf = new_if();
+	err = wifi_get_interface_info(inf, socket, nl_id, name);
 	/*print*/
-	print_if(inf);
+	if(err == -3){
+		printf("no interface names %s\n", name);
+	}else if(err <0){
+		printf("an error appened\n");
+	}else{
+		print_if(inf);
+	}
 }
