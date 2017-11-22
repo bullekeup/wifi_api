@@ -54,15 +54,14 @@ void del_wiphy(struct wifi_wiphy* i){
 	free(i);
 }
 
-void del_wiphy_list(struct wifi_wiphy* i){
+void del_wiphy_list(struct list_head* l){
 	struct list_head* pos, *q;
 	struct wifi_wiphy* tmp;
-	list_for_each_safe(pos, q, &i->entry){
+	list_for_each_safe(pos, q, l){
 		tmp = list_entry(pos, struct wifi_wiphy, entry);
 		list_del(pos);
 		del_wiphy(tmp);
 	}
-	free(i);
 }
 
 
@@ -133,10 +132,10 @@ void del_if(struct wifi_interface* i){
 	free(i);
 }
 
-void del_if_list(struct wifi_interface* i){
+void del_if_list(struct list_head* l){
 	struct list_head* pos, *q;
 	struct wifi_interface* tmp;
-	list_for_each_safe(pos, q, &i->entry){
+	list_for_each_safe(pos, q, l){
 		tmp = list_entry(pos, struct wifi_interface, entry);
 		list_del(pos);
 		del_if(tmp);

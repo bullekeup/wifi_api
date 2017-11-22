@@ -38,7 +38,7 @@ int ack_cb(struct nl_msg *msg, void *arg){
 
 
 int phy_handler(struct nl_msg *msg, void *arg){
-	struct wifi_wiphy* l = arg;//list
+	struct list_head* l = arg;//list
 	struct wifi_wiphy* inf = NULL;
 	struct wifi_wiphy* tmp;
 	int err, nif;
@@ -55,7 +55,7 @@ int phy_handler(struct nl_msg *msg, void *arg){
 	}
 	/*Search of interface in the list*/
 	nif = nla_get_u32(attrs[NL80211_ATTR_WIPHY]);
-	list_for_each_entry(tmp, &l->entry, entry){
+	list_for_each_entry(tmp, l, entry){
 		if(tmp->num == nif){
 			inf = tmp;
 		}
@@ -63,7 +63,7 @@ int phy_handler(struct nl_msg *msg, void *arg){
 	if(inf == NULL){
 		inf = new_wi_phy();
 		inf->num = nif;
-		list_add(&(inf->entry), &(l->entry));
+		list_add(&(inf->entry), l);
 	}
 	/*add information : types supported*/
 	if (attrs[NL80211_ATTR_SUPPORTED_IFTYPES]) {
@@ -95,9 +95,9 @@ int phy_handler(struct nl_msg *msg, void *arg){
 
 int if_handler(struct nl_msg *msg, void *arg)
 {
-	struct wifi_interface* l = arg;//list
+	struct list_head* l = arg;
 	struct wifi_interface* inf = new_if();
-	list_add(&(inf->entry), &(l->entry));
+	list_add(&(inf->entry), l);
 	int err, lg, i;
 	struct genlmsghdr* msg_pl = nlmsg_data(nlmsg_hdr(msg));
 	struct nlattr* attrs [NL80211_ATTR_MAX + 1];
@@ -180,16 +180,15 @@ int send_recv_msg(struct nl_sock* sock, struct nl_msg* msg, struct nl_cb* cb, in
 }
 
 
-struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
+int wifi_get_wiphy(struct list_head* lwp, struct nl_sock* sock, int nl_id){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct wifi_wiphy* lwp = new_wi_phy();//list
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
 		del_wiphy_list(lwp);
-		return NULL;
+		return -1;
 	}
 	genlmsg_put(msg, 0, 0, nl_id, 0, FLAGS, NL80211_CMD_GET_WIPHY, 0);
 	
@@ -198,7 +197,7 @@ struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 	if(cb == NULL){
 		del_wiphy_list(lwp);
 		nlmsg_free(msg);
-		return NULL;
+		return -2;
 	}
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, phy_handler, lwp);
 	
@@ -208,20 +207,19 @@ struct wifi_wiphy* get_wi_phy(struct nl_sock* sock, int nl_id){
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return lwp;
+	return 0;
 }
 
 
-struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
+int wifi_get_interfaces(struct list_head* lif, struct nl_sock* sock, int nl_id){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct wifi_interface* lif = new_if();//list
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
 		del_if_list(lif);
-		return NULL;
+		return -1;
 	}
 	genlmsg_put(msg, 0, 0, nl_id, 0, FLAGS, NL80211_CMD_GET_INTERFACE, 0);
 	
@@ -230,7 +228,7 @@ struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	if(cb == NULL){
 		del_if_list(lif);
 		nlmsg_free(msg);
-		return NULL;
+		return -2;
 	}
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
 	
@@ -240,34 +238,33 @@ struct wifi_interface* wifi_get_interfaces(struct nl_sock* sock, int nl_id){
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return lif;
+	return 0;
 }
 
-struct wifi_interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id){
-	struct wifi_interface* list_if;//list
-	struct wifi_wiphy* list_wiphy;//list
-	struct wifi_interface* mesh_if;//list
+int wifi_get_mesh_interfaces(struct list_head* mesh_if, struct nl_sock* sock, int nl_id){
+	LIST_HEAD(list_if);
+	LIST_HEAD(list_wiphy);
 	struct wifi_interface* inf;
 	struct wifi_wiphy* wi_phy;
 	int mesh_supported;
 	int number_wiphy;
+	int err;
 	struct list_int* type;
 	/*initialise list*/
-	list_if = wifi_get_interfaces(sock, nl_id);
-	if(list_if == NULL){
-		return NULL;
+	err = wifi_get_interfaces(&list_if, sock, nl_id);
+	if(err<0){
+		return err;
 	}
-	list_wiphy = get_wi_phy(sock, nl_id);
-	if(list_wiphy==NULL){
-		del_if_list(list_if);
-		return NULL;
+	err = wifi_get_wiphy(&list_wiphy, sock, nl_id);
+	if(err<0){
+		del_if_list(&list_if);
+		return err;
 	}
-	mesh_if = new_if();
 	/*select interfaces associated with a physical device supporting mesh*/
-	list_for_each_entry(inf, &list_if->entry, entry){
+	list_for_each_entry(inf, &list_if, entry){
 		mesh_supported = 0;
 		number_wiphy = inf->wi_phy;
-		list_for_each_entry(wi_phy, &list_wiphy->entry, entry){
+		list_for_each_entry(wi_phy, &list_wiphy, entry){
 			if(number_wiphy == wi_phy->num){
 				list_for_each_entry(type, &wi_phy->if_types->entry, entry){
 					if(type->i == NL80211_IFTYPE_MESH_POINT){
@@ -277,19 +274,19 @@ struct wifi_interface* wifi_get_mesh_interfaces(struct nl_sock* sock, int nl_id)
 			}
 		}
 		if(mesh_supported){
-			list_add(&clone_if(inf)->entry, &mesh_if->entry);
+			list_add(&clone_if(inf)->entry, mesh_if);
 		}
 	}
 	/*free memory*/
-	del_wiphy_list(list_wiphy);
-	del_if_list(list_if);
-	return mesh_if;
+	del_wiphy_list(&list_wiphy);
+	del_if_list(&list_if);
+	return 0;
 }
 
 int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, int nl_id, char* name){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
-	struct wifi_interface* lif = new_if();//list
+	LIST_HEAD(lif);
 	struct wifi_interface* i;
 	int res = 0;
 	
@@ -306,13 +303,13 @@ int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, in
 		nlmsg_free(msg);
 		return -2;
 	}
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
+	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, &lif);
 	
 	/*send message and receive answer*/
 	send_recv_msg(sock, msg, cb, nl_id);
 	
 	/*get interface and copy it to inf*/
-	i = list_first_entry_or_null(&lif->entry, struct wifi_interface, entry);
+	i = list_first_entry_or_null(&lif, struct wifi_interface, entry);
 	if(i == NULL){
 		/*name probably don't correspond to any interfaces*/
 		res = -3;
@@ -323,7 +320,7 @@ int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, in
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	del_if_list(lif);
+	del_if_list(&lif);
 	
 	return res;
 	

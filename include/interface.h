@@ -35,7 +35,7 @@ struct list_int* new_list_int();/*Allocate memory for a struct list int*/
 void print_wi_phy(struct wifi_wiphy* i);/*print a struct wifi_wiphy (used for test)*/
 struct wifi_wiphy* new_wi_phy();/*Allocate memory for a struct wifi_wiphy*/
 void del_wiphy(struct wifi_wiphy* i);/*free memory used by a struct wifi_wiphy*/
-void del_wiphy_list(struct wifi_wiphy* i);/*free memory used by a list of wiphy*/
+void del_wiphy_list(struct list_head* l);/*free memory used by a list of wiphy*/
 
 void print_if(struct wifi_interface* i);/*print a struct wifi_interface (used for test)*/
 struct wifi_interface* new_if();/*allocate memory for a struct wifi_interface*/
@@ -43,5 +43,5 @@ char* get_if_type(enum nl80211_iftype i); /*associate a string to each enum nl80
 struct wifi_interface* clone_if(struct wifi_interface* i);/*create a copy of an interface, totally independant in memory*/
 void if_copy(struct wifi_interface* dest, struct wifi_interface* src);/*copy an interface*/
 void del_if(struct wifi_interface* i);/*free memory used by a struct wifi_interface*/
-void del_if_list(struct wifi_interface* i);/*free memory used by a list of interfaces*/
+void del_if_list(struct list_head* l);/*free memory used by a list of interfaces*/
 #endif /*INTERFACE_H*/
