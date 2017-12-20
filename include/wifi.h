@@ -37,7 +37,7 @@ int wifi_get_wiphy(struct list_head* lwp, struct nl_sock* sock, int nl_id);
 int wifi_get_interfaces(struct list_head* lif, struct nl_sock* sock, int nl_id);
 /*return the list of interfaces (struct wifi_interface) which supported mesh, or NULL if a problem append
  * interfaces will be referenced by list mesh_if*/
-int wifi_get_mesh_interfaces(struct list_head* mesh_if, struct nl_sock* sock, int nl_id);
+int wifi_get_mesh_allowed_if(struct list_head* mesh_if, struct nl_sock* sock, int nl_id);
 /*get a struct wifi_interface by his name. Return negative if an error appened
  * inf will be completed with informations*/
 int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, int nl_id, char* name);

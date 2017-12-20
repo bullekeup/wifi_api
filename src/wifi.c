@@ -241,7 +241,7 @@ int wifi_get_interfaces(struct list_head* lif, struct nl_sock* sock, int nl_id){
 	return 0;
 }
 
-int wifi_get_mesh_interfaces(struct list_head* mesh_if, struct nl_sock* sock, int nl_id){
+int wifi_get_mesh_allowed_if(struct list_head* mesh_if, struct nl_sock* sock, int nl_id){
 	LIST_HEAD(list_if);
 	LIST_HEAD(list_wiphy);
 	struct wifi_interface* inf;

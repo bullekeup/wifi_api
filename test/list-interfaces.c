@@ -7,7 +7,6 @@
 #include "../include/interface.h"
 #include "../include/wifi.h"
 #include "../include/nl80211.h"
-#include "../include/wifi.h"
 
 int main(){
 	struct nl_sock* socket;
@@ -24,7 +23,7 @@ int main(){
 	}
 	wifi_get_wiphy(&phy_list,socket, nl_id);
 	wifi_get_interfaces(&vir_list,socket, nl_id);
-	wifi_get_mesh_interfaces(&mesh_list,socket, nl_id);
+	wifi_get_mesh_allowed_if(&mesh_list,socket, nl_id);
 	/*print*/
 	printf("wiphy:\n");
 	list_for_each_entry(wp, &phy_list, entry){
