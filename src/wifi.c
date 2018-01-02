@@ -6,6 +6,8 @@
 #include <netlink/msg.h>
 #include <netlink/attr.h>
 
+#include <sys/ioctl.h>
+
 #include <net/if.h>
 
 #include <stdio.h>
@@ -241,15 +243,15 @@ int wifi_get_interfaces(struct list_head* lif, struct nl_sock* sock, int nl_id){
 	return 0;
 }
 
-int wifi_get_mesh_allowed_if(struct list_head* mesh_if, struct nl_sock* sock, int nl_id){
+int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct nl_sock* sock, int nl_id){
 	LIST_HEAD(list_if);
 	LIST_HEAD(list_wiphy);
 	struct wifi_interface* inf;
 	struct wifi_wiphy* wi_phy;
-	int mesh_supported;
+	int type_supported;
 	int number_wiphy;
 	int err;
-	struct list_int* type;
+	struct list_int* type_ac;
 	/*initialise list*/
 	err = wifi_get_interfaces(&list_if, sock, nl_id);
 	if(err<0){
@@ -262,24 +264,52 @@ int wifi_get_mesh_allowed_if(struct list_head* mesh_if, struct nl_sock* sock, in
 	}
 	/*select interfaces associated with a physical device supporting mesh*/
 	list_for_each_entry(inf, &list_if, entry){
-		mesh_supported = 0;
+		type_supported = 0;
 		number_wiphy = inf->wi_phy;
 		list_for_each_entry(wi_phy, &list_wiphy, entry){
 			if(number_wiphy == wi_phy->num){
-				list_for_each_entry(type, &wi_phy->if_types->entry, entry){
-					if(type->i == NL80211_IFTYPE_MESH_POINT){
-						mesh_supported = 1;
+				list_for_each_entry(type_ac, &wi_phy->if_types->entry, entry){
+					if(type_ac->i == type){
+						type_supported = 1;
 					}
 				}
 			}
 		}
-		if(mesh_supported){
-			list_add(&clone_if(inf)->entry, mesh_if);
+		if(type_supported){
+			list_add(&clone_if(inf)->entry, if_res);
 		}
 	}
 	/*free memory*/
 	del_wiphy_list(&list_wiphy);
 	del_if_list(&list_if);
+	return 0;
+}
+
+int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype type, struct nl_sock* sock, int nl_id){
+	LIST_HEAD(list_wiphy);
+	struct wifi_wiphy* wi_phy;
+	struct list_int* type_ac;
+	int type_supported;
+	int err;
+	/*initialise list*/
+	err = wifi_get_wiphy(&list_wiphy, sock, nl_id);
+	if(err<0){
+		return err;
+	}
+	/*select wiphy supporting type*/
+	list_for_each_entry(wi_phy, &list_wiphy, entry){
+		type_supported = 0;
+		list_for_each_entry(type_ac, &wi_phy->if_types->entry, entry){
+			if(type_ac->i == type){
+				type_supported = 1;
+			}
+		}
+		if(type_supported){
+			list_add(&clone_wiphy(wi_phy)->entry, wp_res);
+		}
+	}
+	/*free memory*/
+	del_wiphy_list(&list_wiphy);
 	return 0;
 }
 
@@ -297,6 +327,7 @@ int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, in
 	}
 	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_GET_INTERFACE, 0);
 	nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(name));
+	
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
@@ -324,4 +355,111 @@ int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, in
 	
 	return res;
 	
+}
+
+int wifi_change_frequency(char* name, int freq, struct nl_sock* sock, int nl_id){
+	struct nl_msg* msg;
+	struct nl_cb* cb;
+	int ifindex = 0;
+	
+	/*find interface index*/
+	ifindex = if_nametoindex(name);
+	if(ifindex == 0){
+		return -3;
+	}
+	
+	/*Create message*/
+	msg = nlmsg_alloc();
+	if (msg == NULL) {
+		return -1;
+	}
+	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_SET_WIPHY, 0);
+	nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex);
+	nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
+	nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, NL80211_CHAN_NO_HT);
+	
+	/*Create callback*/
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if(cb == NULL){
+		nlmsg_free(msg);
+		return -2;
+	}
+	
+	/*send message and receive answer*/
+	send_recv_msg(sock, msg, cb, nl_id);
+	
+	/*free memory*/
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+	
+	return 0;
+}
+
+
+int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct nl_sock* sock, int nl_id){
+	struct nl_msg* msg;
+	struct nl_cb* cb;
+	
+	/*Create message*/
+	msg = nlmsg_alloc();
+	if (msg == NULL) {
+		return -1;
+	}
+	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_NEW_INTERFACE, 0);
+	nla_put_u32(msg, NL80211_ATTR_WIPHY, wiphy);
+	nla_put_string(msg, NL80211_ATTR_IFNAME, name);
+	nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
+	
+	/*Create callback*/
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if(cb == NULL){
+		nlmsg_free(msg);
+		return -2;
+	}
+	
+	/*send message and receive answer*/
+	send_recv_msg(sock, msg, cb, nl_id);
+	
+	/*free memory*/
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+	
+	return 0;
+}
+
+int send_ifreq(struct ifreq* ifr){
+	int sock;
+	int err;
+	/*create socket*/
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+	if (sock < 0){
+		return -1;
+	}
+	/*send ifreq*/
+	err = ioctl(sock, SIOCSIFFLAGS, ifr);
+	return err;
+}
+
+int wifi_up_interface(char* name){
+	struct ifreq ifr;
+	int err;
+	/*init ifreq*/
+	memset(&ifr, 0, sizeof ifr);
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_flags |= IFF_UP;
+	/*up interface*/
+	err = send_ifreq(&ifr);
+	return err;
+}
+
+int wifi_down_interface(char* name){
+	struct ifreq ifr;
+	int err;
+	/*init ifreq*/
+	memset(&ifr, 0, sizeof ifr);
+	strncpy(ifr.ifr_name, name, IFNAMSIZ);
+	ifr.ifr_flags &= ~IFF_UP;
+	/*up interface*/
+	err = send_ifreq(&ifr);
+	return err;
 }

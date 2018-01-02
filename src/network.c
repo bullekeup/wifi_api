@@ -61,3 +61,13 @@ void del_mesh_network(struct wifi_mesh_network* mn){
 	}
 	free(mn);
 }
+
+void del_mesh_network_list(struct list_head* l){
+	struct list_head* pos, *q;
+	struct wifi_mesh_network* tmp;
+	list_for_each_safe(pos, q, l){
+		tmp = list_entry(pos, struct wifi_mesh_network, entry);
+		list_del(pos);
+		del_mesh_network(tmp);
+	}
+}

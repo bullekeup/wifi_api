@@ -24,5 +24,6 @@ void mesh_network_set_configuration(struct wifi_mesh_network* mn,const u_int8_t*
 void mesh_network_set_channel(struct wifi_mesh_network* mn, int channel);
 void print_mesh_network(struct wifi_mesh_network* mn);
 void del_mesh_network(struct wifi_mesh_network* mn);
+void del_mesh_network_list(struct list_head* l);
 
 #endif //NETWORK_H

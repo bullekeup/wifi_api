@@ -1,5 +1,15 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
+#include <netlink/genl/genl.h>
+#include <netlink/genl/family.h>
+#include <netlink/genl/ctrl.h>
+#include <netlink/msg.h>
+#include <netlink/attr.h>
+
+#include <sys/ioctl.h>
+
+#include <net/if.h>
+
 #include "linuxlist.h"
 #include "mem.h"
 #include "nl80211.h"
@@ -35,6 +45,8 @@ struct list_int* new_list_int();/*Allocate memory for a struct list int*/
 void print_wi_phy(struct wifi_wiphy* i);/*print a struct wifi_wiphy (used for test)*/
 struct wifi_wiphy* new_wi_phy();/*Allocate memory for a struct wifi_wiphy*/
 void del_wiphy(struct wifi_wiphy* i);/*free memory used by a struct wifi_wiphy*/
+struct wifi_wiphy* clone_wiphy(struct wifi_wiphy* i);/*create a copy of a wiphy, totally independant in memory*/
+void wiphy_copy(struct wifi_wiphy* dest, struct wifi_wiphy* src);/*copy a wiphy*/
 void del_wiphy_list(struct list_head* l);/*free memory used by a list of wiphy*/
 
 void print_if(struct wifi_interface* i);/*print a struct wifi_interface (used for test)*/

@@ -18,7 +18,7 @@ struct list_int* new_list_int(){
 
 void print_wi_phy(struct wifi_wiphy* i){
 	struct list_int* tmp;
-	printf("interface phy#%i\nfrequencies :\n", i->num);
+	printf("interface phy#%i\nfrequencies :\n",i->num);
 	list_for_each_entry(tmp, &i->frequencies->entry, entry){
 		printf("\t %i MHz\n", tmp->i);
 	}
@@ -34,6 +34,28 @@ struct wifi_wiphy* new_wi_phy(){
 	i->frequencies = new_list_int();
 	i->if_types = new_list_int();
 	return i;
+}
+
+struct wifi_wiphy* clone_wiphy(struct wifi_wiphy* i){
+	struct wifi_wiphy* res = new_wi_phy();
+	wiphy_copy(res,i);
+	return res;
+}
+
+void wiphy_copy(struct wifi_wiphy* dest, struct wifi_wiphy* src){
+	struct list_int* l_int;
+	struct list_int* nl_int;
+	dest->num = src->num;
+	list_for_each_entry(l_int, &(src->frequencies->entry), entry){
+		nl_int = new_list_int();
+		nl_int->i = l_int->i;
+		list_add(&(nl_int->entry), &(dest->frequencies->entry));
+	}
+	list_for_each_entry(l_int, &(src->if_types->entry), entry){
+		nl_int = new_list_int();
+		nl_int->i = l_int->i;
+		list_add(&(nl_int->entry), &(dest->if_types->entry));
+	}
 }
 
 void del_wiphy(struct wifi_wiphy* i){

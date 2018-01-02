@@ -23,7 +23,7 @@ int main(){
 	}
 	wifi_get_wiphy(&phy_list,socket, nl_id);
 	wifi_get_interfaces(&vir_list,socket, nl_id);
-	wifi_get_mesh_allowed_if(&mesh_list,socket, nl_id);
+	wifi_get_if_supporting_type(&mesh_list,NL80211_IFTYPE_MESH_POINT,socket, nl_id);
 	/*print*/
 	printf("wiphy:\n");
 	list_for_each_entry(wp, &phy_list, entry){
@@ -34,7 +34,7 @@ int main(){
 	list_for_each_entry(inf, &vir_list, entry){
 		print_if(inf);
 	}
-	printf("\n\n--------------------------------\n\nmesh interfaces : \n");
+	printf("\n\n--------------------------------\n\ninterfaces supporting mesh: \n");
 	list_for_each_entry(inf, &mesh_list, entry){
 		print_if(inf);
 	}

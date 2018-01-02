@@ -3,10 +3,13 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <netlink/genl/genl.h>
 
 #include "../include/network.h"
 #include "../include/mem.h"
 #include "../include/linuxlist.h"
+#include "../include/interface.h"
+#include "../include/wifi.h"
 #include "../include/scan2.h"
 
 
@@ -99,5 +102,65 @@ int scan_network(struct list_head* list_mn, char* dev){
 		return -1;
 	}
 	err = pcap_loop(handle, -1, got_packet, (u_char*)list_mn);
+	if(err==-2){
+		err = 0;
+	}
+	return err;
+}
+
+int scan_all_frequencies(struct list_head* list_mn, char* dev, struct nl_sock* sock, int nl_id){
+	struct wifi_interface* inf = new_if();
+	LIST_HEAD(list_wiphy);
+	struct wifi_wiphy* actual_wp;
+	struct wifi_wiphy* wiphy = NULL;
+	struct list_int* freq_l;
+	int freq;
+	
+	int err = 0;
+	
+	/*get interface information*/
+	err = wifi_get_interface_info(inf, sock, nl_id, dev);
+	if(err<0){/*can't get information about interface*/
+		del_if(inf);
+		return err;
+	}
+	
+	/*get wiphy associatedc with interface*/
+	err = wifi_get_wiphy(&list_wiphy, sock, nl_id);
+	if(err<0){/*can't get wiphy list*/
+		del_if(inf);
+		return err;
+	}
+	list_for_each_entry(actual_wp, &list_wiphy, entry){
+		if(actual_wp->num == inf->wi_phy){
+			wiphy = actual_wp;
+		}
+	}
+	if(wiphy == NULL){/*can't get wiphy associated with interface*/
+		err = -1;
+		goto out;
+	}
+	
+	/*get all frequences supported and scan for each in 2GHz band*/
+	list_for_each_entry(freq_l, &(wiphy->frequencies->entry), entry){
+		freq = freq_l->i;
+		if(freq<2500){
+			err = wifi_change_frequency(dev, freq, sock, nl_id);
+			if(err<0){
+				del_mesh_network_list(list_mn);
+				goto out;
+			}
+			err = scan_network(list_mn, dev);
+			if(err<0){
+				del_mesh_network_list(list_mn);
+				goto out;
+			}
+		}
+	}
+	
+	/*free memory*/
+	out:
+	del_if(inf);
+	del_wiphy_list(&list_wiphy);
 	return err;
 }
