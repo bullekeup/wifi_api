@@ -3,6 +3,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <errno.h>
+
 #include <netlink/genl/genl.h>
 
 #include "../include/network.h"
@@ -80,53 +82,60 @@ void* waiting_thread(void* handle){
 	return NULL;
 }
 
-int scan_network(struct list_head* list_mn, char* dev){
+int scan_network(struct list_head* list_mn, char* dev, char* errbuff){
 	pcap_t* handle;
 	pthread_t thread;
-	char errbuf [PCAP_ERRBUF_SIZE];
 	int err;
+	
 	/*open interface and check type of data sniffed*/
-	handle = pcap_open_live(dev, BUFSIZE, 1, 1000, errbuf);
+	handle = pcap_open_live(dev, BUFSIZE, 1, 1000, errbuff);
 	if(handle == NULL){
-		printf("Can not open device %s : %s\n",dev,errbuf);
-		return -1;
+		return -199;
 	}
 	if(pcap_datalink(handle)!=DLT_IEEE802_11_RADIO){
-		printf("Bad type interface");
-		return -1;
+		strncpy(errbuff, "Bad type of interface", PCAP_ERRBUF_SIZE);
+		return -199;
 	}
+	
 	/*sniff data*/
 	err = pthread_create(&thread, NULL, waiting_thread, handle);
 	if(err){
-		printf("Error in thread creation");
-		return -1;
+		if(err>0){
+			err = -err;
+		}
+		return -err;
 	}
 	err = pcap_loop(handle, -1, got_packet, (u_char*)list_mn);
-	if(err==-2){
+	
+	/*free memory*/
+	if(err==-1){
+		err = -199;
+		strncpy(errbuff, pcap_geterr(handle), PCAP_ERRBUF_SIZE);
+	}else{
 		err = 0;
 	}
+	pcap_close(handle);
 	return err;
 }
 
-int scan_all_frequencies(struct list_head* list_mn, char* dev, struct nl_sock* sock, int nl_id){
+int scan_all_frequencies(struct list_head* list_mn, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
 	struct wifi_interface* inf = new_if();
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* actual_wp;
 	struct wifi_wiphy* wiphy = NULL;
 	struct list_int* freq_l;
 	int freq;
-	
 	int err = 0;
 	
 	/*get interface information*/
-	err = wifi_get_interface_info(inf, sock, nl_id, dev);
+	err = wifi_get_interface_info(inf, dev, nlstate);
 	if(err<0){/*can't get information about interface*/
 		del_if(inf);
 		return err;
 	}
 	
 	/*get wiphy associatedc with interface*/
-	err = wifi_get_wiphy(&list_wiphy, sock, nl_id);
+	err = wifi_get_wiphy(&list_wiphy, nlstate);
 	if(err<0){/*can't get wiphy list*/
 		del_if(inf);
 		return err;
@@ -137,7 +146,7 @@ int scan_all_frequencies(struct list_head* list_mn, char* dev, struct nl_sock* s
 		}
 	}
 	if(wiphy == NULL){/*can't get wiphy associated with interface*/
-		err = -1;
+		err = -ENODEV;
 		goto out;
 	}
 	
@@ -145,12 +154,12 @@ int scan_all_frequencies(struct list_head* list_mn, char* dev, struct nl_sock* s
 	list_for_each_entry(freq_l, &(wiphy->frequencies->entry), entry){
 		freq = freq_l->i;
 		if(freq<2500){
-			err = wifi_change_frequency(dev, freq, sock, nl_id);
+			err = wifi_change_frequency(dev, freq, nlstate);
 			if(err<0){
 				del_mesh_network_list(list_mn);
 				goto out;
 			}
-			err = scan_network(list_mn, dev);
+			err = scan_network(list_mn, dev, errbuff);
 			if(err<0){
 				del_mesh_network_list(list_mn);
 				goto out;
@@ -162,5 +171,8 @@ int scan_all_frequencies(struct list_head* list_mn, char* dev, struct nl_sock* s
 	out:
 	del_if(inf);
 	del_wiphy_list(&list_wiphy);
+	if(err!=0 && err!=-199){
+		strncpy(errbuff, wifi_geterror(err), PCAP_ERRBUF_SIZE);
+	}
 	return err;
 }

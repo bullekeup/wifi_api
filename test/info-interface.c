@@ -12,9 +12,9 @@
 #define DEFAULT_NAME "wlx000f5412d027"
 
 int main(int argc, char** argv){
-	struct nl_sock* socket;
-	struct wifi_interface* inf;
-	int nl_id, err;
+	struct wifi_nlstate nlstate;
+	struct wifi_interface inf;
+	int err;
 	char* name;
 	if(argc>1){
 		name = argv[1];
@@ -22,18 +22,17 @@ int main(int argc, char** argv){
 		name=DEFAULT_NAME;
 	}
 	/*get interface*/
-	socket = create_nl_socket(&nl_id);
-	if(socket == NULL){
-		return -1;
+	err = wifi_init_nlstate(&nlstate);
+	if(err<0){
+		printf("error while initializing wifi_nlstate  :  %s\n", wifi_geterror(err));
+		return err;
 	}
-	inf = new_if();
-	err = wifi_get_interface_info(inf, socket, nl_id, name);
+	err = wifi_get_interface_info(&inf, name, &nlstate);
 	/*print*/
-	if(err == -3){
-		printf("no interface names %s\n", name);
-	}else if(err <0){
-		printf("an error appened\n");
+	if(err<0){
+		printf("error while getting interface information  :  %s\n", wifi_geterror(err));
+		return err;
 	}else{
-		print_if(inf);
+		print_if(&inf);
 	}
 }

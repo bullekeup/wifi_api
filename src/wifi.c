@@ -11,6 +11,7 @@
 #include <net/if.h>
 
 #include <stdio.h>
+#include <errno.h>
 
 #include "../include/linuxlist.h"
 #include "../include/mem.h"
@@ -139,33 +140,59 @@ int if_handler(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
+const char* wifi_geterror(int err){
+	if(err<0){
+		err = -err;
+	}
+	if(err==199){
+		return "pcap error";
+	}
+	if(err<200){
+		return strerror(err);
+	}else{
+		return nl_geterror(err-200);
+	}
+}
 
-struct nl_sock* create_nl_socket(int* nl_id){
+int wifi_init_nlstate(struct wifi_nlstate* nlstate){
 	int err;
-	struct nl_sock* socket;
-	socket = nl_socket_alloc();
-	if(socket == NULL){
-		return NULL;
+	if(nlstate == NULL){
+		return -EFAULT;
 	}
-	nl_socket_set_buffer_size(socket, SIZE_SOCKET, SIZE_SOCKET);
-	err = nl_connect(socket, NETLINK_GENERIC);
-	if(err){
-		return NULL;
+	
+	/*init socket*/
+	nlstate->sock = nl_socket_alloc();
+	if(nlstate->sock == NULL){
+		return -ENOMEM;
 	}
-	*nl_id = genl_ctrl_resolve(socket, "nl80211");
-	if(nl_id < 0){
-		return NULL;
+	nl_socket_set_buffer_size(nlstate->sock, SIZE_SOCKET, SIZE_SOCKET);
+	err = nl_connect(nlstate->sock, NETLINK_GENERIC);
+	if(err<0){
+		goto errout;
 	}
-	return socket;
+	
+	/*resolve netlink identifier*/
+	err = genl_ctrl_resolve(nlstate->sock, "nl80211");
+	if(err<0){
+		goto errout;
+	}
+	nlstate->nl_id = err;
+	return 0;
+	
+	/*error out*/
+	errout:
+	nl_socket_free(nlstate->sock);
+	nlstate->sock = NULL;
+	return err-200;
 }
 
 
-int send_recv_msg(struct nl_sock* sock, struct nl_msg* msg, struct nl_cb* cb, int nl_id){
+int send_recv_msg(struct wifi_nlstate* nlstate, struct nl_msg* msg, struct nl_cb* cb){
 	int err;
 	/*Send message*/
-	err = nl_send_auto(sock, msg);
+	err = nl_send_auto(nlstate->sock, msg);
 	if(err < 0){
-		return -1;
+		return err-200;
 	}
 	
 	/*set up callback*/
@@ -176,74 +203,79 @@ int send_recv_msg(struct nl_sock* sock, struct nl_msg* msg, struct nl_cb* cb, in
 	/*receive messages*/
 	err = 1;
 	while(err>0){
-		nl_recvmsgs(sock, cb);
+		nl_recvmsgs(nlstate->sock, cb);
 	}
-	return err;
+	if(err<0){
+		return err-200;
+	}
+	return 0;
 }
 
 
-int wifi_get_wiphy(struct list_head* lwp, struct nl_sock* sock, int nl_id){
+int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
+	int err;
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
 		del_wiphy_list(lwp);
-		return -1;
+		return -ENOMEM;
 	}
-	genlmsg_put(msg, 0, 0, nl_id, 0, FLAGS, NL80211_CMD_GET_WIPHY, 0);
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, FLAGS, NL80211_CMD_GET_WIPHY, 0);
 	
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
 		del_wiphy_list(lwp);
 		nlmsg_free(msg);
-		return -2;
+		return -ENOMEM;
 	}
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, phy_handler, lwp);
 	
 	/*send message and receive answer*/
-	send_recv_msg(sock, msg, cb, nl_id);
+	err = send_recv_msg(nlstate, msg, cb);
 	
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return 0;
+	return err;
 }
 
 
-int wifi_get_interfaces(struct list_head* lif, struct nl_sock* sock, int nl_id){
+int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
+	int err;
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
 		del_if_list(lif);
-		return -1;
+		return -ENOMEM;
 	}
-	genlmsg_put(msg, 0, 0, nl_id, 0, FLAGS, NL80211_CMD_GET_INTERFACE, 0);
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, FLAGS, NL80211_CMD_GET_INTERFACE, 0);
 	
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
 		del_if_list(lif);
 		nlmsg_free(msg);
-		return -2;
+		return -ENOMEM;
 	}
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
 	
 	/*send message and receive answer*/
-	send_recv_msg(sock, msg, cb, nl_id);
+	err = send_recv_msg(nlstate, msg, cb);
 	
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	return 0;
+	return err;
 }
 
-int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct nl_sock* sock, int nl_id){
+int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	LIST_HEAD(list_if);
 	LIST_HEAD(list_wiphy);
 	struct wifi_interface* inf;
@@ -253,11 +285,11 @@ int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype ty
 	int err;
 	struct list_int* type_ac;
 	/*initialise list*/
-	err = wifi_get_interfaces(&list_if, sock, nl_id);
+	err = wifi_get_interfaces(&list_if, nlstate);
 	if(err<0){
 		return err;
 	}
-	err = wifi_get_wiphy(&list_wiphy, sock, nl_id);
+	err = wifi_get_wiphy(&list_wiphy, nlstate);
 	if(err<0){
 		del_if_list(&list_if);
 		return err;
@@ -285,14 +317,14 @@ int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype ty
 	return 0;
 }
 
-int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype type, struct nl_sock* sock, int nl_id){
+int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* wi_phy;
 	struct list_int* type_ac;
 	int type_supported;
 	int err;
 	/*initialise list*/
-	err = wifi_get_wiphy(&list_wiphy, sock, nl_id);
+	err = wifi_get_wiphy(&list_wiphy, nlstate);
 	if(err<0){
 		return err;
 	}
@@ -313,7 +345,7 @@ int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype
 	return 0;
 }
 
-int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, int nl_id, char* name){
+int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
 	LIST_HEAD(lif);
@@ -323,57 +355,60 @@ int wifi_get_interface_info(struct wifi_interface* inf, struct nl_sock* sock, in
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
-		return -1;
+		return -ENOMEM;
 	}
-	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_GET_INTERFACE, 0);
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_GET_INTERFACE, 0);
 	nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(name));
 	
 	/*Create callback*/
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
 		nlmsg_free(msg);
-		return -2;
+		return -ENOMEM;
 	}
 	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, &lif);
 	
 	/*send message and receive answer*/
-	send_recv_msg(sock, msg, cb, nl_id);
+	res = send_recv_msg(nlstate, msg, cb);
+	if(res<0){
+		goto out;
+	}
 	
 	/*get interface and copy it to inf*/
 	i = list_first_entry_or_null(&lif, struct wifi_interface, entry);
-	if(i == NULL){
-		/*name probably don't correspond to any interfaces*/
-		res = -3;
+	if(i == NULL){//name doesn't correspond to any interface
+		res = -ENODEV;
 	}else{
 		if_copy(inf, i);
 	}
 	
 	/*free memory*/
+	out:
 	nl_cb_put(cb);
 	nlmsg_free(msg);
 	del_if_list(&lif);
-	
 	return res;
 	
 }
 
-int wifi_change_frequency(char* name, int freq, struct nl_sock* sock, int nl_id){
+int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
 	int ifindex = 0;
+	int err;
 	
 	/*find interface index*/
 	ifindex = if_nametoindex(name);
 	if(ifindex == 0){
-		return -3;
+		return -ENODEV;
 	}
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
-		return -1;
+		return -ENOMEM;
 	}
-	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_SET_WIPHY, 0);
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_SET_WIPHY, 0);
 	nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex);
 	nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
 	nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, NL80211_CHAN_NO_HT);
@@ -382,30 +417,66 @@ int wifi_change_frequency(char* name, int freq, struct nl_sock* sock, int nl_id)
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
 		nlmsg_free(msg);
-		return -2;
+		return -ENOMEM;
 	}
 	
 	/*send message and receive answer*/
-	send_recv_msg(sock, msg, cb, nl_id);
-	
+	err = send_recv_msg(nlstate, msg, cb);	
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
-	
-	return 0;
+	return err;
 }
 
-
-int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct nl_sock* sock, int nl_id){
+int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
+	int ifindex = 0;
+	int err;
+	
+	/*find interface index*/
+	ifindex = if_nametoindex(name);
+	if(ifindex == 0){
+		return -ENODEV;
+	}
 	
 	/*Create message*/
 	msg = nlmsg_alloc();
 	if (msg == NULL) {
-		return -1;
+		return -ENOMEM;
 	}
-	genlmsg_put(msg, 0, 0, nl_id, 0, 0, NL80211_CMD_NEW_INTERFACE, 0);
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_SET_INTERFACE, 0);
+	nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex);
+	nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
+	
+	/*Create callback*/
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if(cb == NULL){
+		nlmsg_free(msg);
+		return -ENOMEM;
+	}
+	
+	/*send message and receive answer*/
+	err = send_recv_msg(nlstate, msg, cb);
+	
+	/*free memory*/
+	nl_cb_put(cb);
+	nlmsg_free(msg);
+	return err;
+}
+
+
+int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate){
+	struct nl_msg* msg;
+	struct nl_cb* cb;
+	int err;
+	
+	/*Create message*/
+	msg = nlmsg_alloc();
+	if (msg == NULL) {
+		return -ENOMEM;
+	}
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_NEW_INTERFACE, 0);
 	nla_put_u32(msg, NL80211_ATTR_WIPHY, wiphy);
 	nla_put_string(msg, NL80211_ATTR_IFNAME, name);
 	nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
@@ -414,39 +485,46 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	cb = nl_cb_alloc(NL_CB_DEFAULT);
 	if(cb == NULL){
 		nlmsg_free(msg);
-		return -2;
+		return -ENOMEM;
 	}
 	
 	/*send message and receive answer*/
-	send_recv_msg(sock, msg, cb, nl_id);
+	err = send_recv_msg(nlstate, msg, cb);
 	
 	/*free memory*/
 	nl_cb_put(cb);
 	nlmsg_free(msg);
 	
-	return 0;
+	return err;
 }
 
 int send_ifreq(struct ifreq* ifr){
 	int sock;
 	int err;
+	
 	/*create socket*/
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0){
 		return -1;
 	}
+	
 	/*send ifreq*/
 	err = ioctl(sock, SIOCSIFFLAGS, ifr);
-	return err;
+	if(err<0){
+		return -errno;
+	}
+	return 0;
 }
 
 int wifi_up_interface(char* name){
 	struct ifreq ifr;
 	int err;
+	
 	/*init ifreq*/
 	memset(&ifr, 0, sizeof ifr);
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
 	ifr.ifr_flags |= IFF_UP;
+	
 	/*up interface*/
 	err = send_ifreq(&ifr);
 	return err;
@@ -455,10 +533,12 @@ int wifi_up_interface(char* name){
 int wifi_down_interface(char* name){
 	struct ifreq ifr;
 	int err;
+	
 	/*init ifreq*/
 	memset(&ifr, 0, sizeof ifr);
 	strncpy(ifr.ifr_name, name, IFNAMSIZ);
 	ifr.ifr_flags &= ~IFF_UP;
+	
 	/*up interface*/
 	err = send_ifreq(&ifr);
 	return err;

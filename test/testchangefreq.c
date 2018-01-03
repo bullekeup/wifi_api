@@ -14,8 +14,8 @@
 int main(int argc, char** argv){
 	char* dev;
 	int freq;
-	struct nl_sock* socket;
-	int nl_id;
+	struct wifi_nlstate nlstate;
+	int err;
 	
 	if(argc>=2){
 		dev = argv[1];
@@ -28,10 +28,15 @@ int main(int argc, char** argv){
 		freq = DEFAULT_FREQ;
 	}
 	
-	socket = create_nl_socket(&nl_id);
-	if(socket == NULL){
-		return -1;
+	err = wifi_init_nlstate(&nlstate);
+	if(err<0){
+		printf("error while initializing wifi_nlstate  :  %s\n", wifi_geterror(err));
+		return err;
 	}
 	
-	wifi_change_frequency(dev, freq, socket, nl_id);
+	err = wifi_change_frequency(dev, freq, &nlstate);
+	if(err<0){
+		printf("error while changing frequency  :  %s\n", wifi_geterror(err));
+		return err;
+	}
 }
