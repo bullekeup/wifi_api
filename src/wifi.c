@@ -189,7 +189,7 @@ int wifi_init_nlstate(struct wifi_nlstate* nlstate){
 	return err-200;
 }
 
-int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int flags, struct list_head* params,int have_cb_func, nl_recvmsg_msg_cb_t func, void* arg){
+int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int flags, struct list_head* params, nl_recvmsg_msg_cb_t func, void* arg){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
 	int err;
@@ -219,7 +219,7 @@ int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int f
 		nlmsg_free(msg);
 		return -ENOMEM;
 	}
-	if(have_cb_func){
+	if(func!=NULL){
 		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, func, arg);
 	}
 	nl_cb_err(cb, NL_CB_CUSTOM, error_cb, &err);
@@ -245,12 +245,12 @@ int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int f
 
 
 int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
-	return send_recv_msg(nlstate, NL80211_CMD_GET_WIPHY, FLAGS, NULL, TRUE, phy_handler, lwp);
+	return send_recv_msg(nlstate, NL80211_CMD_GET_WIPHY, FLAGS, NULL, phy_handler, lwp);
 }
 
 
 int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate){
-	return send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, FLAGS, NULL, TRUE, if_handler, lif);
+	return send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, FLAGS, NULL, if_handler, lif);
 }
 
 int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
@@ -333,7 +333,7 @@ int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_
 	/*create param list and send message*/
 	p = new_nlparam(NL80211_ATTR_IFINDEX, TYPE_INT, if_nametoindex(name), NULL);
 	list_add(&p->entry, &attrs);
-	res = send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, 0, &attrs, TRUE, if_handler, &lif);
+	res = send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, 0, &attrs, if_handler, &lif);
 	if(res<0){
 		goto out;
 	}
@@ -373,7 +373,7 @@ int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 	list_add(&p->entry, &attrs);
 	p = new_nlparam(NL80211_ATTR_WIPHY_CHANNEL_TYPE, TYPE_INT, NL80211_CHAN_NO_HT, NULL);
 	list_add(&p->entry, &attrs);
-	err = send_recv_msg(nlstate, NL80211_CMD_SET_WIPHY, 0, &attrs, FALSE, ack_cb, &err);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_WIPHY, 0, &attrs, NULL, NULL);
 		
 	/*free memory*/
 	del_nlparam_list(&attrs);
@@ -397,7 +397,7 @@ int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* 
 	list_add(&p->entry, &attrs);
 	p = new_nlparam(NL80211_ATTR_IFTYPE, TYPE_INT, type, NULL);
 	list_add(&p->entry, &attrs);
-	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, FALSE, ack_cb, &err);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, NULL, NULL);
 	
 	/*free memory*/
 	del_nlparam_list(&attrs);
@@ -417,7 +417,7 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	list_add(&p->entry, &attrs);
 	p = new_nlparam(NL80211_ATTR_IFTYPE, TYPE_INT, type, NULL);
 	list_add(&p->entry, &attrs);
-	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, FALSE, ack_cb, &err);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, NULL, NULL);
 	
 	/*free memory*/
 	del_nlparam_list(&attrs);
