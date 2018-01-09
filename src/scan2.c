@@ -7,6 +7,7 @@
 
 #include <netlink/genl/genl.h>
 
+#include "../include/util.h"
 #include "../include/network.h"
 #include "../include/mem.h"
 #include "../include/linuxlist.h"

@@ -2,18 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../include/util.h"
 #include "../include/interface.h"
 #include "../include/nl80211.h"
 #include "../include/linuxlist.h"
 #include "../include/mem.h"
-
-struct list_int* new_list_int(){
-	struct list_int* i = malloc(sizeof(struct list_int));
-	INIT_LIST_HEAD(&i->entry);
-	return i;
-}
-
-
 
 
 void print_wi_phy(struct wifi_wiphy* i){

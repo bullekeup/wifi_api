@@ -1,7 +1,13 @@
 #ifndef WIFI_H
 #define WIFI_H
 
+#include <net/if.h>
+
 #include "interface.h"
+#include "linuxlist.h"
+#include "mem.h"
+#include "nl80211.h"
+#include "util.h"
 
 #define SIZE_SOCKET 8192
 #define FLAGS 768 //?
@@ -10,6 +16,7 @@ struct wifi_nlstate{
 	struct nl_sock* sock;
 	int nl_id;
 };
+
 
 /*function called if an error message is recieved
  * arg should be an int* and will be set to the error code given by err->error */
@@ -27,7 +34,7 @@ int phy_handler(struct nl_msg *msg, void *arg);
  * arg should be a struct list_head*  */
 int if_handler(struct nl_msg *msg, void *arg);
 /*send teh msg message and wait the answer*/
-int send_recv_msg(struct wifi_nlstate* nlstate, struct nl_msg* msg, struct nl_cb* cb);
+int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int flags, struct list_head* params,int have_cb_func, nl_recvmsg_msg_cb_t func, void* arg);
 /*send an interface request*/
 int send_ifreq(struct ifreq* ifr);
 

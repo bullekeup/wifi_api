@@ -1,25 +1,11 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
-#include <netlink/genl/genl.h>
-#include <netlink/genl/family.h>
-#include <netlink/genl/ctrl.h>
-#include <netlink/msg.h>
-#include <netlink/attr.h>
 
-#include <sys/ioctl.h>
-
-#include <net/if.h>
-
+#include "nl80211.h"
 #include "linuxlist.h"
 #include "mem.h"
-#include "nl80211.h"
 
 #define ETH_ALEN 6
-
-struct list_int{
-	int i;/*value*/
-	struct list_head entry;/*reference next and prev int in the list*/
-};
 
 /*represent a wireless physical device*/
 struct wifi_wiphy{

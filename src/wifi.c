@@ -13,11 +13,14 @@
 #include <stdio.h>
 #include <errno.h>
 
+#include "../include/util.h"
 #include "../include/linuxlist.h"
 #include "../include/mem.h"
 #include "../include/interface.h"
 #include "../include/nl80211.h"
 #include "../include/wifi.h"
+
+
 
 int error_cb(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg){
 	int* p = arg;
@@ -186,19 +189,48 @@ int wifi_init_nlstate(struct wifi_nlstate* nlstate){
 	return err-200;
 }
 
-
-int send_recv_msg(struct wifi_nlstate* nlstate, struct nl_msg* msg, struct nl_cb* cb){
+int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int flags, struct list_head* params,int have_cb_func, nl_recvmsg_msg_cb_t func, void* arg){
+	struct nl_msg* msg;
+	struct nl_cb* cb;
 	int err;
+	struct nlparam* nlp;
+	
+	/*Create message*/
+	msg = nlmsg_alloc();
+	if (msg == NULL) {
+		return -ENOMEM;
+	}
+	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, flags, cmd, 0);
+	
+	/*Add attrs*/
+	if(params!=NULL){
+		list_for_each_entry(nlp, params, entry){
+			if(nlp->type == TYPE_INT){
+				nla_put_u32(msg, nlp->attr, nlp->value_int);
+			}if (nlp->type == TYPE_STRING){
+				nla_put_string(msg, nlp->attr, nlp->value_str);
+			}
+		}
+	}
+	
+	/*Create callback*/
+	cb = nl_cb_alloc(NL_CB_DEFAULT);
+	if(cb == NULL){
+		nlmsg_free(msg);
+		return -ENOMEM;
+	}
+	if(have_cb_func){
+		nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, func, arg);
+	}
+	nl_cb_err(cb, NL_CB_CUSTOM, error_cb, &err);
+	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_cb, &err);
+	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_cb, &err);
+	
 	/*Send message*/
 	err = nl_send_auto(nlstate->sock, msg);
 	if(err < 0){
 		return err-200;
 	}
-	
-	/*set up callback*/
-	nl_cb_err(cb, NL_CB_CUSTOM, error_cb, &err);
-	nl_cb_set(cb, NL_CB_FINISH, NL_CB_CUSTOM, finish_cb, &err);
-	nl_cb_set(cb, NL_CB_ACK, NL_CB_CUSTOM, ack_cb, &err);
 	
 	/*receive messages*/
 	err = 1;
@@ -206,73 +238,19 @@ int send_recv_msg(struct wifi_nlstate* nlstate, struct nl_msg* msg, struct nl_cb
 		nl_recvmsgs(nlstate->sock, cb);
 	}
 	if(err<0){
-		return err-200;
+		return err;
 	}
 	return 0;
 }
 
 
 int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
-	struct nl_msg* msg;
-	struct nl_cb* cb;
-	int err;
-	
-	/*Create message*/
-	msg = nlmsg_alloc();
-	if (msg == NULL) {
-		del_wiphy_list(lwp);
-		return -ENOMEM;
-	}
-	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, FLAGS, NL80211_CMD_GET_WIPHY, 0);
-	
-	/*Create callback*/
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if(cb == NULL){
-		del_wiphy_list(lwp);
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, phy_handler, lwp);
-	
-	/*send message and receive answer*/
-	err = send_recv_msg(nlstate, msg, cb);
-	
-	/*free memory*/
-	nl_cb_put(cb);
-	nlmsg_free(msg);
-	return err;
+	return send_recv_msg(nlstate, NL80211_CMD_GET_WIPHY, FLAGS, NULL, TRUE, phy_handler, lwp);
 }
 
 
 int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate){
-	struct nl_msg* msg;
-	struct nl_cb* cb;
-	int err;
-	
-	/*Create message*/
-	msg = nlmsg_alloc();
-	if (msg == NULL) {
-		del_if_list(lif);
-		return -ENOMEM;
-	}
-	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, FLAGS, NL80211_CMD_GET_INTERFACE, 0);
-	
-	/*Create callback*/
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if(cb == NULL){
-		del_if_list(lif);
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, lif);
-	
-	/*send message and receive answer*/
-	err = send_recv_msg(nlstate, msg, cb);
-	
-	/*free memory*/
-	nl_cb_put(cb);
-	nlmsg_free(msg);
-	return err;
+	return send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, FLAGS, NULL, TRUE, if_handler, lif);
 }
 
 int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
@@ -346,30 +324,16 @@ int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype
 }
 
 int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate){
-	struct nl_msg* msg;
-	struct nl_cb* cb;
 	LIST_HEAD(lif);
+	LIST_HEAD(attrs);
 	struct wifi_interface* i;
 	int res = 0;
+	struct nlparam* p;
 	
-	/*Create message*/
-	msg = nlmsg_alloc();
-	if (msg == NULL) {
-		return -ENOMEM;
-	}
-	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_GET_INTERFACE, 0);
-	nla_put_u32(msg, NL80211_ATTR_IFINDEX, if_nametoindex(name));
-	
-	/*Create callback*/
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if(cb == NULL){
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
-	nl_cb_set(cb, NL_CB_VALID, NL_CB_CUSTOM, if_handler, &lif);
-	
-	/*send message and receive answer*/
-	res = send_recv_msg(nlstate, msg, cb);
+	/*create param list and send message*/
+	p = new_nlparam(NL80211_ATTR_IFINDEX, TYPE_INT, if_nametoindex(name), NULL);
+	list_add(&p->entry, &attrs);
+	res = send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, 0, &attrs, TRUE, if_handler, &lif);
 	if(res<0){
 		goto out;
 	}
@@ -384,17 +348,16 @@ int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_
 	
 	/*free memory*/
 	out:
-	nl_cb_put(cb);
-	nlmsg_free(msg);
 	del_if_list(&lif);
+	del_nlparam_list(&attrs);
 	return res;
 	
 }
 
 int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
-	struct nl_msg* msg;
-	struct nl_cb* cb;
-	int ifindex = 0;
+	LIST_HEAD(attrs);
+	struct nlparam* p;
+	int ifindex;
 	int err;
 	
 	/*find interface index*/
@@ -403,34 +366,23 @@ int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 		return -ENODEV;
 	}
 	
-	/*Create message*/
-	msg = nlmsg_alloc();
-	if (msg == NULL) {
-		return -ENOMEM;
-	}
-	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_SET_WIPHY, 0);
-	nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex);
-	nla_put_u32(msg, NL80211_ATTR_WIPHY_FREQ, freq);
-	nla_put_u32(msg, NL80211_ATTR_WIPHY_CHANNEL_TYPE, NL80211_CHAN_NO_HT);
-	
-	/*Create callback*/
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if(cb == NULL){
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
-	
-	/*send message and receive answer*/
-	err = send_recv_msg(nlstate, msg, cb);	
+	/*create param list and send message*/
+	p = new_nlparam(NL80211_ATTR_IFINDEX, TYPE_INT, ifindex, NULL);
+	list_add(&p->entry, &attrs);
+	p = new_nlparam(NL80211_ATTR_WIPHY_FREQ, TYPE_INT, freq, NULL);
+	list_add(&p->entry, &attrs);
+	p = new_nlparam(NL80211_ATTR_WIPHY_CHANNEL_TYPE, TYPE_INT, NL80211_CHAN_NO_HT, NULL);
+	list_add(&p->entry, &attrs);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_WIPHY, 0, &attrs, FALSE, ack_cb, &err);
+		
 	/*free memory*/
-	nl_cb_put(cb);
-	nlmsg_free(msg);
+	del_nlparam_list(&attrs);
 	return err;
 }
 
 int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
-	struct nl_msg* msg;
-	struct nl_cb* cb;
+	LIST_HEAD(attrs);
+	struct nlparam* p;
 	int ifindex = 0;
 	int err;
 	
@@ -440,61 +392,35 @@ int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* 
 		return -ENODEV;
 	}
 	
-	/*Create message*/
-	msg = nlmsg_alloc();
-	if (msg == NULL) {
-		return -ENOMEM;
-	}
-	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_SET_INTERFACE, 0);
-	nla_put_u32(msg, NL80211_ATTR_IFINDEX, ifindex);
-	nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
-	
-	/*Create callback*/
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if(cb == NULL){
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
-	
-	/*send message and receive answer*/
-	err = send_recv_msg(nlstate, msg, cb);
+	/*create param list and send message*/
+	p = new_nlparam(NL80211_ATTR_IFINDEX, TYPE_INT, ifindex, NULL);
+	list_add(&p->entry, &attrs);
+	p = new_nlparam(NL80211_ATTR_IFTYPE, TYPE_INT, type, NULL);
+	list_add(&p->entry, &attrs);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, FALSE, ack_cb, &err);
 	
 	/*free memory*/
-	nl_cb_put(cb);
-	nlmsg_free(msg);
+	del_nlparam_list(&attrs);
 	return err;
 }
 
 
 int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate){
-	struct nl_msg* msg;
-	struct nl_cb* cb;
+	LIST_HEAD(attrs);
+	struct nlparam* p;
 	int err;
 	
-	/*Create message*/
-	msg = nlmsg_alloc();
-	if (msg == NULL) {
-		return -ENOMEM;
-	}
-	genlmsg_put(msg, 0, 0, nlstate->nl_id, 0, 0, NL80211_CMD_NEW_INTERFACE, 0);
-	nla_put_u32(msg, NL80211_ATTR_WIPHY, wiphy);
-	nla_put_string(msg, NL80211_ATTR_IFNAME, name);
-	nla_put_u32(msg, NL80211_ATTR_IFTYPE, type);
-	
-	/*Create callback*/
-	cb = nl_cb_alloc(NL_CB_DEFAULT);
-	if(cb == NULL){
-		nlmsg_free(msg);
-		return -ENOMEM;
-	}
-	
-	/*send message and receive answer*/
-	err = send_recv_msg(nlstate, msg, cb);
+	/*create param list and send message*/
+	p = new_nlparam(NL80211_ATTR_WIPHY, TYPE_INT, wiphy, NULL);
+	list_add(&p->entry, &attrs);
+	p = new_nlparam(NL80211_ATTR_IFNAME, TYPE_STRING, 0, name);
+	list_add(&p->entry, &attrs);
+	p = new_nlparam(NL80211_ATTR_IFTYPE, TYPE_INT, type, NULL);
+	list_add(&p->entry, &attrs);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, FALSE, ack_cb, &err);
 	
 	/*free memory*/
-	nl_cb_put(cb);
-	nlmsg_free(msg);
-	
+	del_nlparam_list(&attrs);
 	return err;
 }
 

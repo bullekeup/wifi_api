@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "../include/util.h"
 #include "../include/linuxlist.h"
 #include "../include/network.h"
 
