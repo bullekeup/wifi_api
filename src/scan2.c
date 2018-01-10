@@ -16,25 +16,24 @@
 #include "../include/scan2.h"
 
 
-#define BUFSIZE 65000
-#define IEEE80211_HDR_LEN 24
-#define BEACON_MANAGEMENT_FRAME_LEN 12
-#define TAG_MESH_ID 114
-#define TAG_MESH_CONFIG 113
-#define TAG_DS_PARAMETER_SET 3
-
 void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet){
+	struct scan_args* sp = (struct scan_args*)args;
 	const u_char* pt = packet;
 	u_int16_t radiotap_hdr_len;
-	struct list_head* list_mn = (struct list_head*)args;
+	struct list_head* list_mn = sp->list_mesh_network;
 	struct wifi_mesh_network* mn = new_mesh_network();
 	struct wifi_mesh_network* actual_mn;
-	int got_mn = 0;
+	struct list_head* list_nw = sp->list_network;
+	struct wifi_network* nw = new_network();
+	struct wifi_network* actual_nw;
+	int got_mn = 0, got_nw=0;
 	int len = header->len;
+	
 	/*get radiotap_header length and skip it*/
 	radiotap_hdr_len = pt[2] + (pt[3]<<8);
 	pt += radiotap_hdr_len;
 	len -= radiotap_hdr_len;
+	
 	/*get packet type and skip ieee 802.11 header*/
 	if(pt[0]>>2 != 0x20){
 		del_mesh_network(mn);
@@ -42,19 +41,26 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	}
 	pt += IEEE80211_HDR_LEN;
 	len -= IEEE80211_HDR_LEN;
+	
 	/*skip fixed parameters*/
 	pt += BEACON_MANAGEMENT_FRAME_LEN;
 	len -= BEACON_MANAGEMENT_FRAME_LEN;
+	
 	/*analyse tags*/
 	while(len>0){
 		int tag_id = pt[0];
 		int tag_len = pt[1];
+		if(tag_id == TAG_SSID){
+			network_set_ssid(nw,(const char*)pt+2,tag_len);
+			got_nw = 1;
+		}
 		if(tag_id == TAG_DS_PARAMETER_SET && tag_len==1){
 			mesh_network_set_channel(mn,pt[2]);
+			network_set_channel(nw,pt[2]);
 		}
 		if(tag_id == TAG_MESH_ID){
 			got_mn = 1;
-			mesh_network_set_name(mn,(const char*)pt+2,tag_len);
+			mesh_network_set_ssid(mn,(const char*)pt+2,tag_len);
 		}
 		if(tag_id == TAG_MESH_CONFIG){
 			mesh_network_set_configuration(mn,pt+2);
@@ -62,6 +68,24 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 		pt += (tag_len+2);
 		len -= (tag_len+2);
 	}
+	
+	/*add network to the list if new*/
+	if(nw->ssid == NULL){
+		got_nw = 0;
+	}
+	if(got_nw){
+		list_for_each_entry(actual_nw, list_nw, entry){
+			if(strcmp(actual_nw->ssid,nw->ssid)==0 && actual_nw->channel==nw->channel){
+				got_nw = 0;
+			}
+		}
+	}
+	if(got_nw){
+		list_add(&(nw->entry), list_nw);
+	}else{
+		del_network(nw);
+	}
+	
 	/*add mesh network to list if new*/
 	if(got_mn){
 		list_for_each_entry(actual_mn, list_mn, entry){
@@ -78,15 +102,20 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 }
 
 void* waiting_thread(void* handle){
-	sleep(5);
+	sleep(3);
 	pcap_breakloop(handle);
 	return NULL;
 }
 
-int scan_network(struct list_head* list_mn, char* dev, char* errbuff){
+int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff){
 	pcap_t* handle;
 	pthread_t thread;
 	int err;
+	struct scan_args sc;
+	
+	/*init scan args*/
+	sc.list_network = list_nw;
+	sc.list_mesh_network = list_mn;
 	
 	/*open interface and check type of data sniffed*/
 	handle = pcap_open_live(dev, BUFSIZE, 1, 1000, errbuff);
@@ -106,7 +135,7 @@ int scan_network(struct list_head* list_mn, char* dev, char* errbuff){
 		}
 		return -err;
 	}
-	err = pcap_loop(handle, -1, got_packet, (u_char*)list_mn);
+	err = pcap_loop(handle, -1, got_packet, (u_char*)(&sc));
 	
 	/*free memory*/
 	if(err==-1){
@@ -119,14 +148,16 @@ int scan_network(struct list_head* list_mn, char* dev, char* errbuff){
 	return err;
 }
 
-int scan_all_frequencies(struct list_head* list_mn, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
+int scan_all_frequencies(struct list_head* list_mn, int* tab_chanels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
 	struct wifi_interface* inf = new_if();
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* actual_wp;
 	struct wifi_wiphy* wiphy = NULL;
 	struct list_int* freq_l;
-	int freq;
+	int freq, chan, i;
 	int err = 0;
+	LIST_HEAD(list_nw);
+	struct wifi_network* actual_nw;
 	
 	/*get interface information*/
 	err = wifi_get_interface_info(inf, dev, nlstate);
@@ -160,11 +191,22 @@ int scan_all_frequencies(struct list_head* list_mn, char* dev, struct wifi_nlsta
 				del_mesh_network_list(list_mn);
 				goto out;
 			}
-			err = scan_network(list_mn, dev, errbuff);
+			err = scan_network(&list_nw, list_mn, dev, errbuff);
 			if(err<0){
 				del_mesh_network_list(list_mn);
 				goto out;
 			}
+		}
+	}
+	
+	/*count number of networks by channels*/
+	for(i=0;i<size_tab;i++){
+		tab_chanels[i]=0;
+	}
+	list_for_each_entry(actual_nw, &list_nw, entry){
+		chan = actual_nw->channel;
+		if(chan>0 && chan<=size_tab){
+			tab_chanels[chan-1]++;
 		}
 	}
 	

@@ -5,6 +5,48 @@
 #include "../include/linuxlist.h"
 #include "../include/network.h"
 
+struct wifi_network* new_network(){
+	struct wifi_network* res = malloc(sizeof(struct wifi_network));
+	res->ssid = NULL;
+	res->channel = -1;
+	INIT_LIST_HEAD(&res->entry);
+	return res;
+}
+
+void network_set_ssid(struct wifi_network* nw, const char* ssid, int len){
+	if(len==0){
+		return;
+	}
+	int i;
+	nw->ssid = malloc(sizeof(char)*(len+1));
+	for(i=0;i<len;i++){
+		if(ssid[i]=='\0'){/*malformed packet*/
+			free(nw->ssid);
+			nw->ssid=NULL;
+			return;
+		}
+		nw->ssid[i] = ssid[i];
+	}
+	nw->ssid[len] = '\0';
+}
+
+void network_set_channel(struct wifi_network* nw, int channel){
+	nw->channel = channel;
+}
+
+void del_network(struct wifi_network* nw){
+	if(nw==NULL){
+		return;
+	}
+	if(nw->ssid!=NULL){
+		free(nw->ssid);
+	}
+	free(nw);
+}
+
+
+
+
 struct wifi_mesh_network* new_mesh_network(){
 	struct wifi_mesh_network* mn = malloc(sizeof(struct wifi_mesh_network));
 	mn->name = NULL;
@@ -20,7 +62,7 @@ struct wifi_mesh_network* new_mesh_network(){
 	return mn;
 }
 
-void mesh_network_set_name(struct wifi_mesh_network* mn,const char* name, int len){
+void mesh_network_set_ssid(struct wifi_mesh_network* mn,const char* name, int len){
 	int i;
 	mn->name = malloc(sizeof(char)*(len+1));
 	for(i=0;i<len;i++){
@@ -57,6 +99,9 @@ void print_mesh_network(struct wifi_mesh_network* mn){
 }
 
 void del_mesh_network(struct wifi_mesh_network* mn){
+	if(mn==NULL){
+		return;
+	}
 	if(mn->name!=NULL){
 		free(mn->name);
 	}

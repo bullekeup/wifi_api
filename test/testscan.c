@@ -28,21 +28,25 @@ int main(int argc, char** argv){
 	struct wifi_interface dev_inf;
 	struct wifi_nlstate nlstate;
 	char* dev;
-	 char errbuff [PCAP_ERRBUF_SIZE];
+	char errbuff [PCAP_ERRBUF_SIZE];
 	int num_dev;
-	int err;
+	int err, i;
+	int tab_channel[14];
+	
 	/*get interface name*/
 	if(argc<2){
 		dev = DEFAULT_MONITOR_INTERFACE;
 	}else{
 		dev = argv[1];
 	}
+	
 	/*Get param for nl message*/
 	err = wifi_init_nlstate(&nlstate);
 	if(err<0){
 		printf("error while initializing wifi_nlstate  :  %s\n", wifi_geterror(err));
 		return err;
 	}
+	
 	/*Creeate interface if doesn't exist*/
 	num_dev = if_nametoindex(dev);
 	if(num_dev==0){//interface doesn't exist
@@ -65,6 +69,7 @@ int main(int argc, char** argv){
 		/*free memory*/
 		del_wiphy_list(&l_wp);
 	}
+	
 	/*Down all interface on same wiphy*/
 	err = wifi_get_interfaces(&l_if, &nlstate);
 	if(err<0){
@@ -85,14 +90,16 @@ int main(int argc, char** argv){
 			}
 		}
 	}
+	
 	/*Up monitor interface*/
 	err = wifi_up_interface(dev);
 	if(err<0){
 		printf("error while up interface %s  :  %s\n",dev, wifi_geterror(err));
 		return err;
 	}
+	
 	/*Perform scan and print result*/
-	err = scan_all_frequencies(&l_mn, dev, &nlstate, errbuff);
+	err = scan_all_frequencies(&l_mn, tab_channel, 14, dev, &nlstate, errbuff);
 	if(err<0){
 		printf("error while scanning  :  %s\n", wifi_geterror(err));
 		if(err==-199){
@@ -101,5 +108,8 @@ int main(int argc, char** argv){
 	}
 	list_for_each_entry(mn, &l_mn, entry){
 		print_mesh_network(mn);
+	}
+	for(i=0;i<14;i++){
+		printf("Channel %i: %i ntework(s)\n",i+1,tab_channel[i]);
 	}
 }

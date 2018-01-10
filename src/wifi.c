@@ -424,6 +424,7 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	return err;
 }
 
+
 int send_ifreq(struct ifreq* ifr){
 	int sock;
 	int err;
@@ -442,6 +443,7 @@ int send_ifreq(struct ifreq* ifr){
 	return 0;
 }
 
+
 int wifi_up_interface(char* name){
 	struct ifreq ifr;
 	int err;
@@ -455,6 +457,7 @@ int wifi_up_interface(char* name){
 	err = send_ifreq(&ifr);
 	return err;
 }
+
 
 int wifi_down_interface(char* name){
 	struct ifreq ifr;
