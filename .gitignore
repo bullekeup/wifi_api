@@ -52,6 +52,7 @@ Project.ede
 **/termlogtest
 **/x11test
 **/mslhome-*.tar.lzo
+doc/**
 test/info-interface
 test/list-interfaces
 test/listtest

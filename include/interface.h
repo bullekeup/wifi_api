@@ -34,6 +34,7 @@ void del_wiphy(struct wifi_wiphy* i);/*free memory used by a struct wifi_wiphy*/
 struct wifi_wiphy* clone_wiphy(struct wifi_wiphy* i);/*create a copy of a wiphy, totally independant in memory*/
 void wiphy_copy(struct wifi_wiphy* dest, struct wifi_wiphy* src);/*copy a wiphy*/
 void del_wiphy_list(struct list_head* l);/*free memory used by a list of wiphy*/
+void del_wiphy_list(struct list_head* l);/*clear a list of wiphy and free memory used by each wiphy in the list*/
 
 void print_if(struct wifi_interface* i);/*print a struct wifi_interface (used for test)*/
 struct wifi_interface* new_if();/*allocate memory for a struct wifi_interface*/
