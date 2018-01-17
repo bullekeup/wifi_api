@@ -28,6 +28,7 @@ int error_cb(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg){
 }
 
 
+
 int finish_cb(struct nl_msg *msg, void *arg){
 	int* p = arg;
 	*p = 0;
@@ -35,11 +36,13 @@ int finish_cb(struct nl_msg *msg, void *arg){
 }
 
 
+
 int ack_cb(struct nl_msg *msg, void *arg){
 	int* p = arg;
 	*p = 0;
 	return NL_STOP;
 }
+
 
 
 int phy_handler(struct nl_msg *msg, void *arg){
@@ -98,6 +101,7 @@ int phy_handler(struct nl_msg *msg, void *arg){
 }
 
 
+
 int if_handler(struct nl_msg *msg, void *arg)
 {
 	struct list_head* l = arg;
@@ -143,13 +147,7 @@ int if_handler(struct nl_msg *msg, void *arg)
 }
 
 
-/** 
- * \fn const char* wifi_geterror(int err)
- * \brief Get an error message by his code
- * \param err The error code returned by a function
- * \return An error message corresponding to the code
- * 
- * */
+
 const char* wifi_geterror(int err){
 	if(err<0){
 		err = -err;
@@ -165,12 +163,7 @@ const char* wifi_geterror(int err){
 }
 
 
-/**
- * \fn int wifi_init_nlstate(struct wifi_nlstate* nlstate)
- * \brief Fill the struct wifi_nlstate with value needed to correctly use other functions
- * \param nlstate A reference on the struct wifi_nlstate to initialize. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_init_nlstate(struct wifi_nlstate* nlstate){
 	int err;
 	if(nlstate == NULL){
@@ -203,17 +196,8 @@ int wifi_init_nlstate(struct wifi_nlstate* nlstate){
 	return err-200;
 }
 
-/**
- * \fn int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int flags, struct list_head* params, nl_recvmsg_msg_cb_t func, void* arg)
- * \brief Send an netlink message to the kernel and wait for answer
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \param cmd The command to give to the message
- * \param flags The flags to give to the message
- * \param params A reference on a list of parameters (struct nlparam) to add to the message. Can be NULL if message need any parameter.
- * \param func The function which will be called to analyse valid answer. Can be NULL if valid answer doesn't need to be analysed. Else function should have two arguments : a struct nl_msg* and a void*, and return an int.
- * \param arg The argument that will be given to the function designed by previous argument when called. Should be NULL if previous argument is NULL.
- * \return A negative integer if an error append, 0 otherwise
- * */
+
+
 int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int flags, struct list_head* params, nl_recvmsg_msg_cb_t func, void* arg){
 	struct nl_msg* msg;
 	struct nl_cb* cb;
@@ -274,13 +258,8 @@ int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int f
 }
 
 
-/**
- * \fn int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate)
- * \brief Make the list of wireless physical devices 
- * \param lwp A reference on an empty list, which will be filled with the wireless physical devices detected (struct wifi_wiphy). Can't be NULL
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
+
 int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
 	if(lwp==NULL){
 		return -EFAULT;
@@ -289,13 +268,7 @@ int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
 }
 
 
-/**
- * \fn int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate)
- * \brief Make the list of interfaces
- * \param lif A reference on an empty list, which will be filled with the interfaces detected (struct wifi_interface). Can't be NULL
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate){
 	if(lif==NULL){
 		return -EFAULT;
@@ -304,14 +277,7 @@ int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate){
 }
 
 
-/**
- * \fn int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate)
- * \brief Make the list of interfaces which support type indicated by second argument
- * \param if_res A reference on an empty list, which will be filled with the interfaces detected (struct wifi_interface). Can't be NULL
- * \param type The type interfaces should support
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	LIST_HEAD(list_if);
 	LIST_HEAD(list_wiphy);
@@ -361,14 +327,7 @@ int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype ty
 }
 
 
-/**
- * \fn int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate)
- * \brief Make the list of wireless physical device wich support type indicated by second argument
- * \param wp_res A reference on an empty list, which will be filled with the wireless physical devices detected (struct wifi_wiphy). Can't be NULL
- * \param type The type wireless physical devices should support
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* wi_phy;
@@ -404,14 +363,7 @@ int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype
 }
 
 
-/**
- * \fn int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate)
- * \brief Get information about an interface
- * \param inf A reference on an empty struct wifi_interface, which will be filled with the information got (struct wifi_wiphy). Can't be NULL
- * \param name The name of the interface. Can't be NULL
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate){
 	LIST_HEAD(lif);
 	LIST_HEAD(attrs);
@@ -447,14 +399,7 @@ int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_
 }
 
 
-/**
- * \fn int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate)
- * \brief Change frequency of an interface
- * \param name The name of the interface. Can't be NULL
- * \param freq The new frequency
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
@@ -485,14 +430,7 @@ int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 }
 
 
-/**
- * \fn int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate)
- * \brief Change type of an interface
- * \param name The name of the interface. Can't be NULL
- * \param freq The new type of interface
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
@@ -521,15 +459,7 @@ int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* 
 }
 
 
-/**
- * \fn int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate)
- * \brief Create an interface
- * \param name The name of the interface. Can't be NULL
- * \param freq The type of the new interface
- * \param wiphy The number of wireless physical device on which the interface will be created
- * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
@@ -551,6 +481,8 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	del_nlparam_list(&attrs);
 	return err;
 }
+
+
 
 int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
@@ -580,9 +512,7 @@ int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate){
 }
 
 
-/**
- * \fn int send_ifreq(struct ifreq* ifr)
- * */
+
 int send_ifreq(struct ifreq* ifr){
 	int sock;
 	int err;
@@ -602,12 +532,7 @@ int send_ifreq(struct ifreq* ifr){
 }
 
 
-/**
- * \fn int wifi_up_interface(char* name)
- * \brief Up an interface
- * \param name The name of the interface. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
+
 int wifi_up_interface(char* name){
 	struct ifreq ifr;
 	int err;
@@ -627,12 +552,6 @@ int wifi_up_interface(char* name){
 
 
 
-/**
- * \fn int wifi_down_interface(char* name)
- * \brief Down an interface
- * \param name The name of the interface. Can't be NULL
- * \return A negative integer if an error append, 0 otherwise
- * */
 int wifi_down_interface(char* name){
 	struct ifreq ifr;
 	int err;

@@ -5,11 +5,7 @@
 #include "../include/linuxlist.h"
 #include "../include/network.h"
 
-/**
- * \fn struct wifi_network* new_network()
- * \brief Allocate memory for a new struct wifi_network and initialize it
- * \return A reference to the new struct wifi_network
- * */
+
 struct wifi_network* new_network(){
 	struct wifi_network* res = malloc(sizeof(struct wifi_network));
 	res->ssid = NULL;
@@ -18,13 +14,6 @@ struct wifi_network* new_network(){
 	return res;
 }
 
-/**
- * \fn void network_set_ssid(struct wifi_network* nw, const char* ssid, int len)
- * \brief Set the ssid of a struct wifi_network
- * \param nw A reference on the struct wifi_network
- * \param ssid A reference on the first character of the ssid
- * \param len The length of the ssid
- * */
 void network_set_ssid(struct wifi_network* nw, const char* ssid, int len){
 	if(len==0){
 		return;
@@ -98,11 +87,11 @@ struct wifi_mesh_network* new_mesh_network(){
 	return mn;
 }
 
-void mesh_network_set_meshid(struct wifi_mesh_network* mn,const char* name, int len){
+void mesh_network_set_meshid(struct wifi_mesh_network* mn,const char* meshid, int len){
 	int i;
 	mn->meshid = malloc(sizeof(char)*(len+1));
 	for(i=0;i<len;i++){
-		mn->meshid[i] = name[i];
+		mn->meshid[i] = meshid[i];
 	}
 	mn->meshid[len] = '\0';
 }
