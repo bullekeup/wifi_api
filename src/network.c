@@ -47,6 +47,17 @@ void network_set_channel(struct wifi_network* nw, int channel){
 	nw->channel = channel;
 }
 
+void print_network(struct wifi_network* nw){
+	if(nw->ssid!=NULL){
+		printf("ssid : %s\n", nw->ssid);
+	}else{
+		printf("Unknowed ssid");
+	}
+	if(nw->channel!=-1){
+		printf("\tchannel: %i\n", nw->channel);
+	}
+}
+
 void del_network(struct wifi_network* nw){
 	if(nw==NULL){
 		return;
@@ -56,6 +67,18 @@ void del_network(struct wifi_network* nw){
 	}
 	free(nw);
 }
+
+void del_network_list(struct list_head* l){
+	struct list_head* pos, *q;
+	struct wifi_network* tmp;
+	list_for_each_safe(pos, q, l){
+		tmp = list_entry(pos, struct wifi_network, entry);
+		list_del(pos);
+		del_network(tmp);
+	}
+}
+
+
 
 
 

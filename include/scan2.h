@@ -44,5 +44,5 @@ int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev
  * errbuff should reference an array with a size supperior or equal to PCAP_ERRBUF_SIZE
  * return is negative if an error append, or 0 otherwise
  * if return is -199, errbuff is set to a description of error*/
-int scan_all_frequencies(struct list_head* list_mn, int* tab_chanels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff);
+int scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_chanels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff);
 #endif /*SCAN2_H*/

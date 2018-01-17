@@ -70,7 +70,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	}
 	
 	/*add network to the list if new*/
-	if(nw->ssid == NULL){
+	if(nw->ssid == NULL || list_nw == NULL){
 		got_nw = 0;
 	}
 	if(got_nw){
@@ -87,9 +87,12 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	}
 	
 	/*add mesh network to list if new*/
+	if(list_mn == NULL){
+		got_mn = 0;
+	}
 	if(got_mn){
 		list_for_each_entry(actual_mn, list_mn, entry){
-			if(strcmp(actual_mn->name, mn->name) == 0){
+			if(strcmp(actual_mn->name, mn->name)==0 && actual_mn->channel==mn->channel){
 				got_mn = 0;
 			}
 		}
@@ -106,6 +109,7 @@ void* waiting_thread(void* handle){
 	pcap_breakloop(handle);
 	return NULL;
 }
+
 
 int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff){
 	pcap_t* handle;
@@ -148,7 +152,8 @@ int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev
 	return err;
 }
 
-int scan_all_frequencies(struct list_head* list_mn, int* tab_chanels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
+
+int scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_channels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
 	struct wifi_interface* inf = new_if();
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* actual_wp;
@@ -156,8 +161,22 @@ int scan_all_frequencies(struct list_head* list_mn, int* tab_chanels, int size_t
 	struct list_int* freq_l;
 	int freq, chan, i;
 	int err = 0;
-	LIST_HEAD(list_nw);
 	struct wifi_network* actual_nw;
+	struct wifi_mesh_network* actual_mn;
+	int want_nw=1, want_mn=1;
+	LIST_HEAD(lnw); LIST_HEAD(lmn);
+	
+	/*create missing list head*/
+	if(tab_channels != NULL){
+		if(list_nw==NULL){
+			list_nw = &lnw;
+			want_nw = 0;
+		}
+		if(list_mn==NULL){
+			list_mn = &lmn;
+			want_mn = 0;
+		}
+	}
 	
 	/*get interface information*/
 	err = wifi_get_interface_info(inf, dev, nlstate);
@@ -191,7 +210,7 @@ int scan_all_frequencies(struct list_head* list_mn, int* tab_chanels, int size_t
 				del_mesh_network_list(list_mn);
 				goto out;
 			}
-			err = scan_network(&list_nw, list_mn, dev, errbuff);
+			err = scan_network(list_nw, list_mn, dev, errbuff);
 			if(err<0){
 				del_mesh_network_list(list_mn);
 				goto out;
@@ -200,18 +219,32 @@ int scan_all_frequencies(struct list_head* list_mn, int* tab_chanels, int size_t
 	}
 	
 	/*count number of networks by channels*/
-	for(i=0;i<size_tab;i++){
-		tab_chanels[i]=0;
-	}
-	list_for_each_entry(actual_nw, &list_nw, entry){
-		chan = actual_nw->channel;
-		if(chan>0 && chan<=size_tab){
-			tab_chanels[chan-1]++;
+	if(tab_channels != NULL){
+		for(i=0;i<size_tab;i++){
+			tab_channels[i]=0;
+		}
+		list_for_each_entry(actual_nw, list_nw, entry){
+			chan = actual_nw->channel;
+			if(chan>0 && chan<=size_tab){
+				tab_channels[chan-1]++;
+			}
+		}
+		list_for_each_entry(actual_mn, list_mn, entry){
+			chan = actual_mn->channel;
+			if(chan>0 && chan<=size_tab){
+				tab_channels[chan-1]++;
+			}
 		}
 	}
 	
 	/*free memory*/
 	out:
+	if(!want_nw){
+		del_network_list(list_nw);
+	}
+	if(!want_mn){
+		del_mesh_network_list(list_mn);
+	}
 	del_if(inf);
 	del_wiphy_list(&list_wiphy);
 	if(err!=0 && err!=-199){

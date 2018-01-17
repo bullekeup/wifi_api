@@ -99,16 +99,18 @@ int main(int argc, char** argv){
 	}
 	
 	/*Perform scan and print result*/
-	err = scan_all_frequencies(&l_mn, tab_channel, 14, dev, &nlstate, errbuff);
+	err = scan_all_frequencies(NULL, &l_mn, tab_channel, 14, dev, &nlstate, errbuff);
 	if(err<0){
 		printf("error while scanning  :  %s\n", wifi_geterror(err));
 		if(err==-199){
 			printf("\t%s\n", errbuff);
+			return 0;
 		}
 	}
 	list_for_each_entry(mn, &l_mn, entry){
 		print_mesh_network(mn);
 	}
+	printf("\n------------------------------\n\n");
 	for(i=0;i<14;i++){
 		printf("Channel %i: %i ntework(s)\n",i+1,tab_channel[i]);
 	}

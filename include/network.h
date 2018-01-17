@@ -29,7 +29,9 @@ struct wifi_mesh_network{
 struct wifi_network* new_network();
 void network_set_ssid(struct wifi_network* nw, const char* ssid, int len);
 void network_set_channel(struct wifi_network* nw, int channel);
+void print_network(struct wifi_network* nw);
 void del_network(struct wifi_network* nw);
+void del_network_list(struct list_head* l);
 
 struct wifi_mesh_network* new_mesh_network();
 void mesh_network_set_ssid(struct wifi_mesh_network* mn,const char* name, int len);

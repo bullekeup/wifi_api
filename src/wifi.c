@@ -543,7 +543,7 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	list_add(&p->entry, &attrs);
 	p = new_nlparam(NL80211_ATTR_IFTYPE, TYPE_INT, type, NULL);
 	list_add(&p->entry, &attrs);
-	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, NULL, NULL);
+	err = send_recv_msg(nlstate, NL80211_CMD_NEW_INTERFACE, 0, &attrs, NULL, NULL);
 	
 	/*free memory*/
 	del_nlparam_list(&attrs);
