@@ -58,3 +58,4 @@ test/list-interfaces
 test/listtest
 test/testscan
 test/testchangefreq
+test/testmeshid

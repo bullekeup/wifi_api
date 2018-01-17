@@ -85,7 +85,7 @@ void del_network_list(struct list_head* l){
 
 struct wifi_mesh_network* new_mesh_network(){
 	struct wifi_mesh_network* mn = malloc(sizeof(struct wifi_mesh_network));
-	mn->name = NULL;
+	mn->meshid = NULL;
 	mn->channel =-1;
 	mn->path_selection_protocol = -1;
 	mn->path_selection_metric = -1;
@@ -98,13 +98,13 @@ struct wifi_mesh_network* new_mesh_network(){
 	return mn;
 }
 
-void mesh_network_set_ssid(struct wifi_mesh_network* mn,const char* name, int len){
+void mesh_network_set_meshid(struct wifi_mesh_network* mn,const char* name, int len){
 	int i;
-	mn->name = malloc(sizeof(char)*(len+1));
+	mn->meshid = malloc(sizeof(char)*(len+1));
 	for(i=0;i<len;i++){
-		mn->name[i] = name[i];
+		mn->meshid[i] = name[i];
 	}
-	mn->name[len] = '\0';
+	mn->meshid[len] = '\0';
 }
 
 void mesh_network_set_configuration(struct wifi_mesh_network* mn,const u_int8_t* conf){
@@ -122,8 +122,8 @@ void mesh_network_set_channel(struct wifi_mesh_network* mn, int channel){
 }
 
 void print_mesh_network(struct wifi_mesh_network* mn){
-	if(mn->name!=NULL){
-		printf("meshid : %s\n", mn->name);
+	if(mn->meshid!=NULL){
+		printf("meshid : %s\n", mn->meshid);
 	}else{
 		printf("unknowed meshid\n");
 	}if(mn->channel != -1){
@@ -138,8 +138,8 @@ void del_mesh_network(struct wifi_mesh_network* mn){
 	if(mn==NULL){
 		return;
 	}
-	if(mn->name!=NULL){
-		free(mn->name);
+	if(mn->meshid!=NULL){
+		free(mn->meshid);
 	}
 	free(mn);
 }

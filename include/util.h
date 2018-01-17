@@ -8,6 +8,7 @@
 //type of data
 #define TYPE_INT 1
 #define TYPE_STRING 2
+#define TYPE_DATA 3
 
 //booleans
 #define TRUE 1

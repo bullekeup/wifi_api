@@ -237,6 +237,8 @@ int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int f
 				nla_put_u32(msg, nlp->attr, nlp->value_int);
 			}if (nlp->type == TYPE_STRING){
 				nla_put_string(msg, nlp->attr, nlp->value_str);
+			}if(nlp->type == TYPE_DATA){
+				nla_put(msg, nlp->attr, nlp->value_int, nlp->value_str);
 			}
 		}
 	}
@@ -544,6 +546,33 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	p = new_nlparam(NL80211_ATTR_IFTYPE, TYPE_INT, type, NULL);
 	list_add(&p->entry, &attrs);
 	err = send_recv_msg(nlstate, NL80211_CMD_NEW_INTERFACE, 0, &attrs, NULL, NULL);
+	
+	/*free memory*/
+	del_nlparam_list(&attrs);
+	return err;
+}
+
+int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate){
+	LIST_HEAD(attrs);
+	struct nlparam* p;
+	int ifindex = 0;
+	int err;
+	if(name==NULL){
+		return -EFAULT;
+	}
+	
+	/*find interface index*/
+	ifindex = if_nametoindex(name);
+	if(ifindex == 0){
+		return -ENODEV;
+	}
+	
+	/*create param list and send message*/
+	p = new_nlparam(NL80211_ATTR_IFINDEX, TYPE_INT, ifindex, NULL);
+	list_add(&p->entry, &attrs);
+	p = new_nlparam(NL80211_ATTR_MESH_ID, TYPE_DATA, strlen(meshid), meshid);
+	list_add(&p->entry, &attrs);
+	err = send_recv_msg(nlstate, NL80211_CMD_SET_INTERFACE, 0, &attrs, NULL, NULL);
 	
 	/*free memory*/
 	del_nlparam_list(&attrs);

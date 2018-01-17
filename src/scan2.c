@@ -60,7 +60,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 		}
 		if(tag_id == TAG_MESH_ID){
 			got_mn = 1;
-			mesh_network_set_ssid(mn,(const char*)pt+2,tag_len);
+			mesh_network_set_meshid(mn,(const char*)pt+2,tag_len);
 		}
 		if(tag_id == TAG_MESH_CONFIG){
 			mesh_network_set_configuration(mn,pt+2);
@@ -92,7 +92,7 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	}
 	if(got_mn){
 		list_for_each_entry(actual_mn, list_mn, entry){
-			if(strcmp(actual_mn->name, mn->name)==0 && actual_mn->channel==mn->channel){
+			if(strcmp(actual_mn->meshid, mn->meshid)==0 && actual_mn->channel==mn->channel){
 				got_mn = 0;
 			}
 		}

@@ -60,6 +60,8 @@ int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate);
 int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate);
 /*Create an interface*/
 int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate);
+/*set meshid*/
+int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate);
 /*Up an interface */
 int wifi_up_interface(char* name);
 /*Down an interface designed by name*/

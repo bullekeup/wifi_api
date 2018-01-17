@@ -13,7 +13,7 @@ struct wifi_network{
 
 
 struct wifi_mesh_network{
-	char* name;
+	char* meshid;
 	int channel;
 	u_int8_t path_selection_protocol;
 	u_int8_t path_selection_metric;
@@ -34,7 +34,7 @@ void del_network(struct wifi_network* nw);
 void del_network_list(struct list_head* l);
 
 struct wifi_mesh_network* new_mesh_network();
-void mesh_network_set_ssid(struct wifi_mesh_network* mn,const char* name, int len);
+void mesh_network_set_meshid(struct wifi_mesh_network* mn,const char* name, int len);
 void mesh_network_set_configuration(struct wifi_mesh_network* mn,const u_int8_t* conf);
 void mesh_network_set_channel(struct wifi_mesh_network* mn, int channel);
 void print_mesh_network(struct wifi_mesh_network* mn);
