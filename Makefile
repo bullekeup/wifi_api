@@ -17,6 +17,7 @@ src/interface.o : include/interface.h include/linuxlist.h include/mem.h include/
 src/scan2.o : include/network.h include/mem.h include/linuxlist.h include/scan2.h include/util.h
 src/network.c : include/linuxlist.h include/network.h
 src/util.c : include/mem.h include/linuxlist.h
+src/ip.c : 
 
 test/list-interfaces : test/list-interfaces.c $(OBJS) include/wifi.h include/interface.h include/nl80211.h include/linuxlist.h include/mem.h
 	gcc $(CFLAGS) $(OBJS) $< $(LDFLAGS) -o $@

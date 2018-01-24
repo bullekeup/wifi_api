@@ -49,6 +49,7 @@ int main(int argc, char** argv){
 		printf("error while down interface %s  :  %s\n",dev, wifi_geterror(err));
 		return err;
 	}
+	
 	/*set interface in mesh mode if didn't*/
 	err = wifi_get_interface_info(&inf, dev, &nlstate);
 	if(err<0){
