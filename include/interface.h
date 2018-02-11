@@ -10,7 +10,6 @@
 
 #include "nl80211.h"
 #include "linuxlist.h"
-#include "mem.h"
 
 #define ETH_ALEN 6
 

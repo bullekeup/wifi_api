@@ -148,24 +148,10 @@ int if_handler(struct nl_msg *msg, void *arg)
 
 
 
-const char* wifi_geterror(int err){
-	if(err<0){
-		err = -err;
-	}
-	if(err==199){
-		return "pcap error";
-	}
-	if(err<200){
-		return strerror(err);
-	}else{
-		return nl_geterror(err-200);
-	}
-}
-
-
-
 int wifi_init_nlstate(struct wifi_nlstate* nlstate){
 	int err;
+	
+	/*check parameter*/
 	if(nlstate == NULL){
 		return -EFAULT;
 	}
@@ -203,7 +189,12 @@ int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int f
 	struct nl_cb* cb;
 	int err;
 	struct nlparam* nlp;
+	
+	/*check parameters*/
 	if(nlstate==NULL){
+		return -EFAULT;
+	}
+	if(nlstate->sock == NULL){
 		return -EFAULT;
 	}
 	
@@ -261,7 +252,7 @@ int send_recv_msg(struct wifi_nlstate* nlstate, enum nl80211_commands cmd, int f
 
 
 int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
-	if(lwp==NULL){
+	if(lwp==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	return send_recv_msg(nlstate, NL80211_CMD_GET_WIPHY, FLAGS, NULL, phy_handler, lwp);
@@ -270,7 +261,7 @@ int wifi_get_wiphy(struct list_head* lwp, struct wifi_nlstate* nlstate){
 
 
 int wifi_get_interfaces(struct list_head* lif, struct wifi_nlstate* nlstate){
-	if(lif==NULL){
+	if(lif==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	return send_recv_msg(nlstate, NL80211_CMD_GET_INTERFACE, FLAGS, NULL, if_handler, lif);
@@ -287,7 +278,9 @@ int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype ty
 	int number_wiphy;
 	int err;
 	struct list_int* type_ac;
-	if(if_res==NULL){
+	
+	/*check parameters*/
+	if(if_res==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -302,7 +295,7 @@ int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype ty
 		return err;
 	}
 	
-	/*select interfaces associated with a physical device supporting mesh*/
+	/*select interfaces associated with a physical device supporting type*/
 	list_for_each_entry(inf, &list_if, entry){
 		type_supported = 0;
 		number_wiphy = inf->wi_phy;
@@ -334,7 +327,9 @@ int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype
 	struct list_int* type_ac;
 	int type_supported;
 	int err;
-	if(wp_res==NULL){
+	
+	/*check parameters*/
+	if(wp_res==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -370,7 +365,9 @@ int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_
 	struct wifi_interface* i;
 	int res = 0;
 	struct nlparam* p;
-	if(inf==NULL || name==NULL){
+	
+	/*check parameters*/
+	if(inf==NULL || name==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -405,7 +402,9 @@ int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 	struct nlparam* p;
 	int ifindex;
 	int err;
-	if(name==NULL){
+	
+	/*check parameters*/
+	if(name==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -436,7 +435,9 @@ int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* 
 	struct nlparam* p;
 	int ifindex = 0;
 	int err;
-	if(name==NULL){
+	
+	/*check parameters*/
+	if(name==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -464,7 +465,9 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 	LIST_HEAD(attrs);
 	struct nlparam* p;
 	int err;
-	if(name==NULL){
+	
+	/*check parameters*/
+	if(name==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -489,7 +492,9 @@ int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate){
 	struct nlparam* p;
 	int ifindex = 0;
 	int err;
-	if(name==NULL){
+	
+	/*check parameters*/
+	if(name==NULL || nlstate==NULL){
 		return -EFAULT;
 	}
 	
@@ -517,10 +522,15 @@ int send_ifreq(struct ifreq* ifr){
 	int sock;
 	int err;
 	
+	/*check parameters*/
+	if(ifr==NULL){
+		return -EFAULT;
+	}
+	
 	/*create socket*/
 	sock = socket(AF_INET, SOCK_DGRAM, 0);
 	if (sock < 0){
-		return -1;
+		return -errno;
 	}
 	
 	/*send ifreq*/

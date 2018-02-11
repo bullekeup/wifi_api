@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <netlink/errno.h>
+#include <string.h>
 
 #include "../include/util.h"
 
@@ -34,3 +36,19 @@ struct list_int* new_list_int(){
 
 
 
+const char* wifi_geterror(int err){
+	if(err<0){
+		err = -err;
+	}
+	if(err==199){
+		return "pcap error";
+	}
+	if(err==198){
+		return "ip address error";
+	}
+	if(err<200){
+		return strerror(err);
+	}else{
+		return nl_geterror(err-200);
+	}
+}

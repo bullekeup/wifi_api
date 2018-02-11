@@ -24,7 +24,7 @@ struct wifi_network{
 
 
 /**
- * \struct wifi_mesh-network
+ * \struct wifi_mesh_network
  * \brief Represent a mesh wifi network
  * */
 struct wifi_mesh_network{

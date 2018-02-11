@@ -29,6 +29,11 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 	int got_mn = 0, got_nw=0;
 	int len = header->len;
 	
+	/*check parameter*/
+	if(args==NULL){
+		return;
+	}
+	
 	/*get radiotap_header length and skip it*/
 	radiotap_hdr_len = pt[2] + (pt[3]<<8);
 	pt += radiotap_hdr_len;
@@ -105,6 +110,9 @@ void got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *pa
 }
 
 void* waiting_thread(void* handle){
+	if(handle==NULL){
+		return NULL;
+	}
 	sleep(3);
 	pcap_breakloop(handle);
 	return NULL;
@@ -116,6 +124,11 @@ int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev
 	pthread_t thread;
 	int err;
 	struct scan_args sc;
+	
+	/*check parameters*/
+	if(dev==NULL || errbuff==NULL){
+		return -EFAULT;
+	}
 	
 	/*init scan args*/
 	sc.list_network = list_nw;
@@ -166,7 +179,12 @@ int scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, i
 	int want_nw=1, want_mn=1;
 	LIST_HEAD(lnw); LIST_HEAD(lmn);
 	
-	/*create missing list head*/
+	/*check parameters*/
+	if(dev==NULL || nlstate==NULL || errbuff==NULL){
+		return -EFAULT;
+	}
+	
+	/*create missing list head if needed*/
 	if(tab_channels != NULL){
 		if(list_nw==NULL){
 			list_nw = &lnw;

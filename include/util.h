@@ -8,7 +8,6 @@
 #define UTIL_H
 
 #include "linuxlist.h"
-#include "mem.h"
 #include "nl80211.h"
 
 //type of data
@@ -66,5 +65,14 @@ struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int, ch
  * \param nlpl A reference on the list
  * */
 void del_nlparam_list(struct list_head* nlpl);
+
+
+/** 
+ * \fn const char* wifi_geterror(int err)
+ * \brief Get an error message by his code
+ * \param err The error code returned by a function
+ * \return An error message corresponding to the code
+ * */
+const char* wifi_geterror(int err);
 
 #endif //UTIL_H
