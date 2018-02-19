@@ -116,7 +116,7 @@ int store_ip(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg){
 int wifi_get_ip_address(unsigned char* addr, char* dev, struct rtnl_handle* rth){
 	int err;
 	struct ip_param params;
-	int i, sum;
+	int i;
 	
 	/*Check and init parameters*/
 	if(addr==NULL || dev==NULL || rth==NULL){
@@ -150,7 +150,7 @@ int wifi_get_ip_address(unsigned char* addr, char* dev, struct rtnl_handle* rth)
 int print_ip_address(unsigned char* addr){
 	int i;
 	if(addr==NULL){
-		return -ENODEV;
+		return -EFAULT;
 	}
 	for(i=0;i<4;i++){
 		printf("%i",addr[i]);
@@ -158,5 +158,6 @@ int print_ip_address(unsigned char* addr){
 			printf(".");
 		}
 	}
+	return 0;
 }
 

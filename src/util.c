@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <netlink/errno.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "../include/util.h"
 
@@ -51,4 +52,52 @@ const char* wifi_geterror(int err){
 	}else{
 		return nl_geterror(err-200);
 	}
+}
+
+void mac_addr_data_to_str(char* str,const char* data){
+	int i, pt=0;
+	char prov [5];
+	for(i=0;i<ETH_ALEN;i++){
+		sprintf(prov, "%02x", data[i]);
+		str[pt] = prov[0];
+		str[pt+1] = prov[1];
+		if(i<ETH_ALEN-1){
+			str[pt+2] = ':';
+		}
+		pt += 3;
+	}
+}
+
+char hex_to_dec(char h){
+	switch (h){
+		case 'a':case 'A':
+		return 0xa;
+		case 'b':case 'B':
+		return 0xb;
+		case 'c':case 'C':
+		return 0xc;
+		case 'd':case 'D':
+		return 0xd;
+		case 'e':case 'E':
+		return 0xe;
+		case 'f':case 'F':
+		return 0xf;
+		default:
+		return h-'0';
+	}
+}
+
+int mac_addr_str_to_data(char* data,const char* str){
+	int i, pt=0;
+	char h1,h2;
+	for(i=0;i<ETH_ALEN*3;i+=3){
+		h1 = hex_to_dec(data[i]);
+		h2 = hex_to_dec(data[i+1]);
+		if(h1>0xf || h1<0 || h2>0xf || h2<0 || (pt<ETH_ALEN-1 && data[i+2]!=':')){
+			return -1;
+		}
+		data[pt] = (h1<<4)+h2;
+		pt++;
+	}
+	return 0;
 }

@@ -10,6 +10,9 @@
 #include "linuxlist.h"
 #include "nl80211.h"
 
+//length
+#define ETH_ALEN 6
+
 //type of data
 #define TYPE_INT 1
 #define TYPE_STRING 2
@@ -74,5 +77,11 @@ void del_nlparam_list(struct list_head* nlpl);
  * \return An error message corresponding to the code
  * */
 const char* wifi_geterror(int err);
+
+void mac_addr_data_to_str(char* str,const char* data);
+
+char hex_to_dec(char h);
+
+int mac_addr_str_to_data(char* data,const char* str);
 
 #endif //UTIL_H

@@ -60,3 +60,4 @@ test/testscan
 test/testchangefreq
 test/testmeshid
 test/getip
+test/getmpath

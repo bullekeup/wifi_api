@@ -8,10 +8,9 @@
 #ifndef INTERFACE_H
 #define INTERFACE_H
 
+#include "util.h"
 #include "nl80211.h"
 #include "linuxlist.h"
-
-#define ETH_ALEN 6
 
 
 /**
