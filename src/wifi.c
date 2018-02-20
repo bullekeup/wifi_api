@@ -137,7 +137,7 @@ int if_handler(struct nl_msg *msg, void *arg)
 	}
 	/*Add mac address*/
 	if(attrs[NL80211_ATTR_MAC]){
-		char* mac = (char*)nla_data(attrs[NL80211_ATTR_MAC]);
+		u_int8_t* mac = (u_int8_t*)nla_data(attrs[NL80211_ATTR_MAC]);
 		for(i=0;i<ETH_ALEN;i++){
 			inf->mac[i] = mac[i];
 		}

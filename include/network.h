@@ -1,5 +1,5 @@
 /**
- * \file interface.h
+ * \file network.h
  * \brief Defines structures relative to networks and fonctions to manipulate this structures
  * \author BUGNOT Thibaut
  * \date 17 january 2018
@@ -19,7 +19,7 @@
 struct wifi_network{
 	char* ssid;/*!< The SSID of the network*/
 	int channel;/*!< The channel on which the network is present*/
-	struct list_head entry;/*!< Used to create list of struct_wifi*/
+	struct list_head entry;/*!< Used to create list of struct wifi_network*/
 };
 
 
@@ -37,7 +37,7 @@ struct wifi_mesh_network{
 	u_int8_t authentication_protocol;
 	u_int8_t number_peerings;
 	u_int8_t capability;
-	struct list_head entry;/*!< Used to create list of struct_wifi*/
+	struct list_head entry;/*!< Used to create list of struct wifi_mesh_network*/
 };
 
 

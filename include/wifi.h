@@ -11,10 +11,9 @@
 #include <net/if.h>
 
 #include "interface.h"
-#include "util.h"
 
 #define SIZE_SOCKET 8192
-#define FLAGS 768 //?
+#define FLAGS 768
 
 /**
  * \struct wifi_nlstate
@@ -53,7 +52,7 @@ int ack_cb(struct nl_msg *msg, void *arg);
  * \fn int phy_handler(struct nl_msg *msg, void *arg)
  * \brief get from an netlink message information about wireless physical device and add it to a list
  * \param msg The netlink message
- * \param arg Must reference a list if wireless physical devices (struct wifi_wiphy) or en empty list
+ * \param arg Must reference a list of wireless physical devices (struct wifi_wiphy) or an empty list
  * */
 int phy_handler(struct nl_msg *msg, void *arg);
 /**

@@ -7,6 +7,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <sys/types.h>
 #include "linuxlist.h"
 #include "nl80211.h"
 
@@ -78,10 +79,26 @@ void del_nlparam_list(struct list_head* nlpl);
  * */
 const char* wifi_geterror(int err);
 
-void mac_addr_data_to_str(char* str,const char* data);
+/**\fn void mac_addr_data_to_str(u_int8_t* str,const char* data)
+ * \brief calculate string form of a mac address
+ * \param str Must reference a ATH_LEN*3 (18) length array which will be filled with the string mac address
+ * \param data A reference on mac address under binary form
+ * */
+void mac_addr_data_to_str(char* str,const u_int8_t* data);
 
-char hex_to_dec(char h);
+/**\fn u_int8_t hex_to_dec(char h)
+ * \brief return a value associated with an hexadecimal character
+ * \param h An hexadecimal character (0-9,a-f-A-F)
+ * \return The value associated with argument
+ * */
+u_int8_t hex_to_dec(char h);
 
-int mac_addr_str_to_data(char* data,const char* str);
+/**\fn int mac_addr_str_to_data(u_int8_t* data,const char* str)
+ * \brief Calculate the binary form of a mac address given by a string
+ * \param data Must reference a ETH_ALEN (6) length array which will be filled with the binary mac address
+ * \param str A reference of a string under form "xx:xx:xx:xx:xx:xx"
+ * \return A negative integer if the second argument is malformed, 0 otherwise.
+ * */
+int mac_addr_str_to_data(u_int8_t* data,const char* str);
 
 #endif //UTIL_H

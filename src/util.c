@@ -2,7 +2,7 @@
 #include <netlink/errno.h>
 #include <string.h>
 #include <stdio.h>
-
+#include <errno.h>
 #include "../include/util.h"
 
 struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int, char* value_str){
@@ -54,7 +54,7 @@ const char* wifi_geterror(int err){
 	}
 }
 
-void mac_addr_data_to_str(char* str,const char* data){
+void mac_addr_data_to_str(char* str,const u_int8_t* data){
 	int i, pt=0;
 	char prov [5];
 	for(i=0;i<ETH_ALEN;i++){
@@ -63,12 +63,14 @@ void mac_addr_data_to_str(char* str,const char* data){
 		str[pt+1] = prov[1];
 		if(i<ETH_ALEN-1){
 			str[pt+2] = ':';
+		}else{
+			str[pt+2]='\0';
 		}
 		pt += 3;
 	}
 }
 
-char hex_to_dec(char h){
+u_int8_t hex_to_dec(char h){
 	switch (h){
 		case 'a':case 'A':
 		return 0xa;
@@ -87,14 +89,14 @@ char hex_to_dec(char h){
 	}
 }
 
-int mac_addr_str_to_data(char* data,const char* str){
+int mac_addr_str_to_data(u_int8_t* data,const char* str){
 	int i, pt=0;
 	char h1,h2;
 	for(i=0;i<ETH_ALEN*3;i+=3){
 		h1 = hex_to_dec(data[i]);
 		h2 = hex_to_dec(data[i+1]);
 		if(h1>0xf || h1<0 || h2>0xf || h2<0 || (pt<ETH_ALEN-1 && data[i+2]!=':')){
-			return -1;
+			return -EINVAL;
 		}
 		data[pt] = (h1<<4)+h2;
 		pt++;

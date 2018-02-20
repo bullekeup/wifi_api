@@ -35,7 +35,7 @@ struct wifi_interface{
 	int type; /*!< Type of connection used*/
 	int frequency;/*!< Frequency used*/
 	int width;/*!< Width of channel*/
-	unsigned char mac [ETH_ALEN]; /*!< Mac adress*/
+	u_int8_t mac [ETH_ALEN]; /*!< Mac adress*/
 	struct list_head entry;/*!< Used to create list of interface*/
 };
 
