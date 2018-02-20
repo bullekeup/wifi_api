@@ -44,9 +44,6 @@ const char* wifi_geterror(int err){
 	if(err==199){
 		return "pcap error";
 	}
-	if(err==198){
-		return "ip address error";
-	}
 	if(err<200){
 		return strerror(err);
 	}else{

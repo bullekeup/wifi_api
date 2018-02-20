@@ -35,24 +35,24 @@ int wifi_start_avahi(char* dev, char* ip){
 		pt = ip;
 		for(i=0;i<8;i++){
 			if(ip[i]!=b_addr[i]){
-				return -198;
+				return -EINVAL;
 			}
 		}
 		nb=0;i=0;last=-1;
 		pt = ip+8;
 		while(pt!='\0'){
 			if(i==2){
-				return -198;
+				return -EINVAL;
 			}
 			if(*pt=='.'){
 				if(nb>255 || (last == nb && (nb==0||nb==255))){
-					return -198;
+					return -EINVAL;
 				}
 				last = nb;
 				i++;
 				nb=0;
 			}else if(*pt>'9' || *pt<'0'){
-				return -198;
+				return -EINVAL;
 			}else{
 				nb = nb*10;
 				nb = nb+(*pt-'0');
