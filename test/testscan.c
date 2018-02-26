@@ -99,7 +99,7 @@ int main(int argc, char** argv){
 	}
 	
 	/*Perform scan and print result*/
-	err = scan_all_frequencies(NULL, &l_mn, tab_channel, 14, dev, &nlstate, errbuff);
+	err = wifi_scan_all_frequencies(NULL, &l_mn, tab_channel, 14, dev, &nlstate, errbuff);
 	if(err<0){
 		printf("error while scanning  :  %s\n", wifi_geterror(err));
 		if(err==-199){

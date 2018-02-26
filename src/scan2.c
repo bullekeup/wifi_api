@@ -119,7 +119,7 @@ void* waiting_thread(void* handle){
 }
 
 
-int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff){
+int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff){
 	pcap_t* handle;
 	pthread_t thread;
 	int err;
@@ -166,7 +166,7 @@ int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev
 }
 
 
-int scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_channels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
+int wifi_scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_channels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
 	struct wifi_interface* inf = new_if();
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* actual_wp;
@@ -226,11 +226,13 @@ int scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, i
 			err = wifi_change_frequency(dev, freq, nlstate);
 			if(err<0){
 				del_mesh_network_list(list_mn);
+				del_network_list(list_nw);
 				goto out;
 			}
-			err = scan_network(list_nw, list_mn, dev, errbuff);
+			err = wifi_scan_network(list_nw, list_mn, dev, errbuff);
 			if(err<0){
 				del_mesh_network_list(list_mn);
+				del_network_list(list_nw);
 				goto out;
 			}
 		}

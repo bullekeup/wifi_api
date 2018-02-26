@@ -58,6 +58,9 @@ void del_network(struct wifi_network* nw){
 }
 
 void del_network_list(struct list_head* l){
+	if(l==NULL){
+		return;
+	}
 	struct list_head* pos, *q;
 	struct wifi_network* tmp;
 	list_for_each_safe(pos, q, l){
@@ -134,6 +137,9 @@ void del_mesh_network(struct wifi_mesh_network* mn){
 }
 
 void del_mesh_network_list(struct list_head* l){
+	if(l==NULL){
+		return;
+	}
 	struct list_head* pos, *q;
 	struct wifi_mesh_network* tmp;
 	list_for_each_safe(pos, q, l){
