@@ -38,6 +38,7 @@ int store_ip(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg);
  * \brief get ip address of an interface
  * \param addr Must reference a 4 length array which will be filled with the ip address found. Can't be NULL.
  * \param dev A reference of the name of the interface. Can't be NULL.
+ * \param rth A reference on a struct rtnl_handle. struct rtnl_handle must has been oppened with rtnl_open. Can't be NULL
  * \return A negative integer if a problem happened, 0 otherwise.
  * */
 int wifi_get_ip_address(u_int8_t* addr, char* dev, struct rtnl_handle* rth);
