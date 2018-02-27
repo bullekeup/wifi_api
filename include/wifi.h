@@ -129,34 +129,34 @@ int wifi_get_if_supporting_type(struct list_head* if_res, enum nl80211_iftype ty
  * */
 int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype type, struct wifi_nlstate* nlstate);
 /**
- * \fn int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate)
+ * \fn int wifi_get_interface_info(struct wifi_interface* inf, const char* name, struct wifi_nlstate* nlstate)
  * \brief Get information about an interface
  * \param inf A reference on an empty struct wifi_interface, which will be filled with the information got (struct wifi_wiphy). Can't be NULL
  * \param name The name of the interface. Can't be NULL
  * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate);
+int wifi_get_interface_info(struct wifi_interface* inf, const char* name, struct wifi_nlstate* nlstate);
 /**
- * \fn int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate)
+ * \fn int wifi_change_frequency(const char* name, int freq, struct wifi_nlstate* nlstate)
  * \brief Change frequency of an interface
  * \param name The name of the interface. Can't be NULL
  * \param freq The new frequency
  * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate);
+int wifi_change_frequency(const char* name, int freq, struct wifi_nlstate* nlstate);
 /**
- * \fn int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate)
+ * \fn int wifi_change_type(const char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate)
  * \brief Change type of an interface
  * \param name The name of the interface. Can't be NULL
  * \param freq The new type of interface
  * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate);
+int wifi_change_type(const char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate);
 /**
- * \fn int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate)
+ * \fn int wifi_create_interface(const char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate)
  * \brief Create an interface
  * \param name The name of the interface. Can't be NULL
  * \param freq The type of the new interface
@@ -164,28 +164,28 @@ int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* 
  * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate);
+int wifi_create_interface(const char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate);
 /**
- * \fn int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate)
+ * \fn int wifi_set_meshid(const char* name, const char* meshid, struct wifi_nlstate* nlstate)
  * \brief Set mesh id on a mesh interface
  * \param name The name of the interface. Can't be NULL
  * \param meshid The mesh id to set. Can't be NULL
  * \param nlstate A reference on a initialised struct wifi_nlstate. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate);
+int wifi_set_meshid(const char* name, const char* meshid, struct wifi_nlstate* nlstate);
 /**
- * \fn int wifi_up_interface(char* name)
+ * \fn int wifi_up_interface(const char* name);
  * \brief Up an interface
  * \param name The name of the interface. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_up_interface(char* name);
+int wifi_up_interface(const char* name);
 /**
- * \fn int wifi_down_interface(char* name)
+ * \fn int wifi_down_interface(const char* name)
  * \brief Down an interface
  * \param name The name of the interface. Can't be NULL
  * \return A negative integer if an error happened, 0 otherwise
  * */
-int wifi_down_interface(char* name);
+int wifi_down_interface(const char* name);
 #endif /*WIFI_H*/

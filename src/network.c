@@ -36,7 +36,7 @@ void network_set_channel(struct wifi_network* nw, int channel){
 	nw->channel = channel;
 }
 
-void print_network(struct wifi_network* nw){
+void print_network(const struct wifi_network* nw){
 	if(nw->ssid!=NULL){
 		printf("ssid : %s\n", nw->ssid);
 	}else{
@@ -113,7 +113,7 @@ void mesh_network_set_channel(struct wifi_mesh_network* mn, int channel){
 	mn->channel = channel;
 }
 
-void print_mesh_network(struct wifi_mesh_network* mn){
+void print_mesh_network(const struct wifi_mesh_network* mn){
 	if(mn->meshid!=NULL){
 		printf("meshid : %s\n", mn->meshid);
 	}else{

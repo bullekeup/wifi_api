@@ -39,7 +39,7 @@ struct list_int{
 struct nlparam{
 	enum nl80211_attrs attr;/*!< Name of the attribute*/
 	int value_int;/*!< Value of the attribute if type is TYPE_INT or length of the data if type is TYPE_DATA. Unused if type is TYPE_STRING*/
-	char* value_str;/*!< Reference a string if type is TYPE_STRING or the beginning of data id type is TYPE_DATA. Unused if type is TYPE_INT*/
+	const char* value_str;/*!< Reference a string if type is TYPE_STRING or the beginning of data id type is TYPE_DATA. Unused if type is TYPE_INT*/
 	int type;/*!< Type of data to add to the nlmessage*/
 	struct list_head entry;/*!< Used to create list of nlparam*/ 
 };
@@ -62,7 +62,7 @@ struct list_int* new_list_int();
  * \param value_str A reference on the first character if type is TYPE_STRING or on the beginning of the data Array if type is TYPE_DATA. Should be NULL if type is TYPE_INT
  * \return A reference on the new struct nlparam
  * */
-struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int, char* value_str);
+struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int,const char* value_str);
 /**
  * \fn void del_nlparam_list(struct list_head* nlpl)
  * \brief Clear a list of struct nlparam aand free memory used by each struct nlparam

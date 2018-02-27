@@ -119,7 +119,7 @@ void* waiting_thread(void* handle){
 }
 
 
-int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff){
+int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn, const char* dev, char* errbuff){
 	pcap_t* handle;
 	pthread_t thread;
 	int err;
@@ -166,7 +166,7 @@ int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn, char
 }
 
 
-int wifi_scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_channels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff){
+int wifi_scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_channels, int size_tab, const char* dev, struct wifi_nlstate* nlstate, char* errbuff){
 	struct wifi_interface* inf = new_if();
 	LIST_HEAD(list_wiphy);
 	struct wifi_wiphy* actual_wp;

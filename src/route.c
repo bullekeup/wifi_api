@@ -46,7 +46,7 @@ int mpath_handler(struct nl_msg *msg, void *arg){
 	return NL_SKIP;
 }
 
-int wifi_add_mesh_path(char* name, u_int8_t* dest, u_int8_t* next_hop, struct wifi_nlstate* nlstate){
+int wifi_add_mesh_path(const char* name, const u_int8_t* dest, const u_int8_t* next_hop, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	int res = 0;
 	struct nlparam* p;
@@ -76,7 +76,7 @@ int wifi_add_mesh_path(char* name, u_int8_t* dest, u_int8_t* next_hop, struct wi
 }
 
 
-int wifi_get_mesh_path(struct list_head* lmp, char* name, struct wifi_nlstate* nlstate){
+int wifi_get_mesh_path(struct list_head* lmp, const char* name, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	int res = 0;
 	struct nlparam* p;
@@ -101,7 +101,7 @@ int wifi_get_mesh_path(struct list_head* lmp, char* name, struct wifi_nlstate* n
 	return res;
 }
 
-int wifi_del_mesh_path(char* name, u_int8_t* dest, struct wifi_nlstate* nlstate){
+int wifi_del_mesh_path(const char* name, const u_int8_t* dest, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	int res = 0;
 	struct nlparam* p;

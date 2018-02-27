@@ -47,7 +47,7 @@ void* waiting_thread(void* handle);
 
 
  /**
-  * \fn int scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff)
+  * \fn int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn,const char* dev, char* errbuff)
   * \brief scan network on a monitor interface during 3 seconds to find existing network
   * \param list_nw Must reference an empty list which will be filled with the normal networks found during the scan. Can be NULL if user doesn't want this type of informations
   * \param list_mn Must reference an empty list which will be filled with the mesh networks found during the scan. Can be NULL if user doesn't want this type of informations
@@ -55,9 +55,9 @@ void* waiting_thread(void* handle);
   * \param errbuff Must reference an array with a size supperior or equal to PCAP_ERRBUF_SIZE. Can't be NULL. Will be filled with a error message if an error relative to pcap happend.
   * \return a negative integer if an error happened or 0 otherwise. If return is -199, array referenced by previous param will be set with a description of error.
   * */
-int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn, char* dev, char* errbuff);
+int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn,const char* dev, char* errbuff);
   /**
-  * \fn int scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_chanels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff);
+  * \fn int wifi_scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_chanels, int size_tab,const char* dev, struct wifi_nlstate* nlstate, char* errbuff)
   * \brief scan all frequences of 2GHz band on a monitor interface during 3 seconds each to find existing network
   * \param list_nw Must reference an empty list which will be filled with the normal networks found during the scan. Can be NULL if user doesn't want this type of informations
   * \param list_mn Must reference an empty list which will be filled with the mesh networks found during the scan. Can be NULL if user doesn't want this type of informations
@@ -68,5 +68,5 @@ int wifi_scan_network(struct list_head* list_nw, struct list_head* list_mn, char
   * \param errbuff Must reference an array with a size supperior or equal to PCAP_ERRBUF_SIZE. Can't be NULL. Will be filled with a error message if an error relative to pcap happend.
   * \return a negative integer if an error happened or 0 otherwise. If return is -199, array referenced by previous param will be set with a description of error.
   * */
-int wifi_scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_chanels, int size_tab, char* dev, struct wifi_nlstate* nlstate, char* errbuff);
+int wifi_scan_all_frequencies(struct list_head* list_nw, struct list_head* list_mn, int* tab_chanels, int size_tab,const char* dev, struct wifi_nlstate* nlstate, char* errbuff);
 #endif /*SCAN2_H*/

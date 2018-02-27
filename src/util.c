@@ -5,7 +5,7 @@
 #include <errno.h>
 #include "../include/util.h"
 
-struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int, char* value_str){
+struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int,const char* value_str){
 	struct nlparam* res = malloc(sizeof(struct nlparam));
 	res->attr = attr;
 	res->type = type;

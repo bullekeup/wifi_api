@@ -29,11 +29,11 @@ struct wifi_mesh_path{
  * */
 struct wifi_mesh_path* new_mesh_path();
 /**
- * \fn void print_mesh_path(struct wifi_mesh_path* mp)
+ * \fn void print_mesh_path(const struct wifi_mesh_path* mp)
  * \brief print a struct wifi_mesh_path
  * \param mp A reference on the struct wifi_mesh_path to print
  * */
-void print_mesh_path(struct wifi_mesh_path* mp);
+void print_mesh_path(const struct wifi_mesh_path* mp);
 /**
  * \fn void del_mesh_path_list(struct list_head* l)
  * \brief clear a list of struct wifi_mesh_path and free memory used by each struct wifi_mesh_path

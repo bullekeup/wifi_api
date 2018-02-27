@@ -10,7 +10,7 @@
 
 
 
-void print_wi_phy(struct wifi_wiphy* i){
+void print_wi_phy(const struct wifi_wiphy* i){
 	struct list_int* tmp;
 	printf("interface phy#%i\nfrequencies :\n",i->num);
 	list_for_each_entry(tmp, &i->frequencies->entry, entry){
@@ -30,13 +30,13 @@ struct wifi_wiphy* new_wi_phy(){
 	return i;
 }
 
-struct wifi_wiphy* clone_wiphy(struct wifi_wiphy* i){
+struct wifi_wiphy* clone_wiphy(const struct wifi_wiphy* i){
 	struct wifi_wiphy* res = new_wi_phy();
 	wiphy_copy(res,i);
 	return res;
 }
 
-void wiphy_copy(struct wifi_wiphy* dest, struct wifi_wiphy* src){
+void wiphy_copy(struct wifi_wiphy* dest, const struct wifi_wiphy* src){
 	struct list_int* l_int;
 	struct list_int* nl_int;
 	dest->num = src->num;
@@ -85,7 +85,7 @@ void del_wiphy_list(struct list_head* l){
 
 
 
-void print_if(struct wifi_interface* i){
+void print_if(const struct wifi_interface* i){
 	int j;
 	printf("phy#%i : %s:\n\ttype : %s\n\tmac : ",i->wi_phy, i->name, get_if_type(i->type));
 	for(j=0;j<ETH_ALEN;j++){
@@ -120,13 +120,13 @@ char* get_if_type(enum nl80211_iftype i){
 	return names[i];
 }
 
-struct wifi_interface* clone_if(struct wifi_interface* i){
+struct wifi_interface* clone_if(const struct wifi_interface* i){
 	struct wifi_interface* res = malloc(sizeof(struct wifi_interface));
 	if_copy(res,i);
 	return res;
 }
 
-void if_copy(struct wifi_interface* dest, struct wifi_interface* src){
+void if_copy(struct wifi_interface* dest, const struct wifi_interface* src){
 	int size_name = strlen(src->name);
 	int j;
 	dest->name = malloc(sizeof(char)*(size_name+1));

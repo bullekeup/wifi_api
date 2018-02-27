@@ -65,11 +65,11 @@ void network_set_ssid(struct wifi_network* nw, const char* ssid, int len);
  * */
 void network_set_channel(struct wifi_network* nw, int channel);
 /**
- * \fn void print_network(struct wifi_network* nw)
+ * \fn void print_network(const struct wifi_network* nw)
  * \brief Print a struct wifi_network (used for test)
  * \param nw A reference on the struct wifi_network to print
  * */
-void print_network(struct wifi_network* nw);
+void print_network(const struct wifi_network* nw);
 /**
  * \fn void del_network(struct wifi_network* nw)
  * \brief Free memory used by a struct wifi_network
@@ -115,11 +115,11 @@ void mesh_network_set_configuration(struct wifi_mesh_network* mn,const u_int8_t*
  * */
 void mesh_network_set_channel(struct wifi_mesh_network* mn, int channel);
 /**
- * \fn void print_mesh_network(struct wifi_mesh_network* mn)
+ * \fn void print_mesh_network(const struct wifi_mesh_network* mn)
  * \brief Print a struct wifi_mesh_network (used for test)
  * \param mn A reference on the struct wifi_mesh_network to print
  * */
-void print_mesh_network(struct wifi_mesh_network* mn);
+void print_mesh_network(const struct wifi_mesh_network* mn);
 /**
  * \fn void del_mesh_network(struct wifi_mesh_network* mn)
  * \brief Free memory used by a struct wifi_mesh_network

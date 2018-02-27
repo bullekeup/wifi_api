@@ -18,7 +18,7 @@ struct wifi_mesh_path* new_mesh_path(){
 	return res;
 }
 
-void print_mesh_path(struct wifi_mesh_path* mp){
+void print_mesh_path(const struct wifi_mesh_path* mp){
 	int i;
 	printf("dest:");
 	for(i=0;i<ETH_ALEN;i++){

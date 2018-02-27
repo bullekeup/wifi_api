@@ -12,11 +12,11 @@
 #include "../include/ip.h"
 
 
-int wifi_start_avahi(char* dev, char* ip){
+int wifi_start_avahi(const char* dev, const char* ip){
 	char cmd [256];
 	char prov [256];
 	char* b_addr = "169.254.";
-	char* pt;
+	const char* pt;
 	int i, nb, last;
 	
 	/*Check parameters*/
@@ -69,7 +69,7 @@ int wifi_start_avahi(char* dev, char* ip){
 	return 0;
 }
 
-int wifi_stop_avahi(char* dev){
+int wifi_stop_avahi(const char* dev){
 	char cmd [256];
 	
 	/*Check parameters*/
@@ -113,7 +113,7 @@ int store_ip(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg){
 	return 0;
 }
 
-int wifi_get_ip_address(unsigned char* addr, char* dev, struct rtnl_handle* rth){
+int wifi_get_ip_address(u_int8_t* addr, const char* dev, struct rtnl_handle* rth){
 	int err;
 	struct ip_param params;
 	int i;
@@ -147,7 +147,7 @@ int wifi_get_ip_address(unsigned char* addr, char* dev, struct rtnl_handle* rth)
 }
 
 
-int print_ip_address(unsigned char* addr){
+int print_ip_address(const u_int8_t* addr){
 	int i;
 	if(addr==NULL){
 		return -EFAULT;

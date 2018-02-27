@@ -359,7 +359,7 @@ int wifi_get_wiphy_supporting_type(struct list_head* wp_res, enum nl80211_iftype
 
 
 
-int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_nlstate* nlstate){
+int wifi_get_interface_info(struct wifi_interface* inf, const char* name, struct wifi_nlstate* nlstate){
 	LIST_HEAD(lif);
 	LIST_HEAD(attrs);
 	struct wifi_interface* i;
@@ -397,7 +397,7 @@ int wifi_get_interface_info(struct wifi_interface* inf, char* name, struct wifi_
 
 
 
-int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
+int wifi_change_frequency(const char* name, int freq, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
 	int ifindex;
@@ -430,7 +430,7 @@ int wifi_change_frequency(char* name, int freq, struct wifi_nlstate* nlstate){
 
 
 
-int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
+int wifi_change_type(const char* name, enum nl80211_iftype type, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
 	int ifindex = 0;
@@ -461,7 +461,7 @@ int wifi_change_type(char* name, enum nl80211_iftype type, struct wifi_nlstate* 
 
 
 
-int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate){
+int wifi_create_interface(const char* name, enum nl80211_iftype type, int wiphy, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
 	int err;
@@ -487,7 +487,7 @@ int wifi_create_interface(char* name, enum nl80211_iftype type, int wiphy, struc
 
 
 
-int wifi_set_meshid(char* name, char* meshid, struct wifi_nlstate* nlstate){
+int wifi_set_meshid(const char* name, const char* meshid, struct wifi_nlstate* nlstate){
 	LIST_HEAD(attrs);
 	struct nlparam* p;
 	int ifindex = 0;
@@ -543,7 +543,7 @@ int send_ifreq(struct ifreq* ifr){
 
 
 
-int wifi_up_interface(char* name){
+int wifi_up_interface(const char* name){
 	struct ifreq ifr;
 	int err;
 	if(name==NULL){
@@ -562,7 +562,7 @@ int wifi_up_interface(char* name){
 
 
 
-int wifi_down_interface(char* name){
+int wifi_down_interface(const char* name){
 	struct ifreq ifr;
 	int err;
 	if(name==NULL){

@@ -43,11 +43,11 @@ struct wifi_interface{
 
 
 /**
- * \fn void print_wi_phy(struct wifi_wiphy* i)
+ * \fn void print_wi_phy(const struct wifi_wiphy* i)
  * \brief print a struct wifi_wiphy (used for test)
  * \param i A reference to the struct wifi_wiphy to print
  * */
-void print_wi_phy(struct wifi_wiphy* i);
+void print_wi_phy(const struct wifi_wiphy* i);
 /**
  * \fn struct wifi_wiphy* new_wi_phy()
  * \brief Allocate memory for a new struct wifi_wiphy and initialize it
@@ -61,19 +61,19 @@ struct wifi_wiphy* new_wi_phy();
  * */
 void del_wiphy(struct wifi_wiphy* i);
 /**
- * \fn struct wifi_wiphy* clone_wiphy(struct wifi_wiphy* i)
+ * \fn struct wifi_wiphy* clone_wiphy(const struct wifi_wiphy* i)
  * \brief Create a copy of an existing struct wifi_wiphy totally indepedant in memory
  * \param i A reference on the struct wifi_wiphy to copy
  * \return A reference to the new struct wifi_wiphy
  * */
-struct wifi_wiphy* clone_wiphy(struct wifi_wiphy* i);
+struct wifi_wiphy* clone_wiphy(const struct wifi_wiphy* i);
 /**
- * \fn void wiphy_copy(struct wifi_wiphy* dest, struct wifi_wiphy* src)
+ * \fn void wiphy_copy(struct wifi_wiphy* dest, const struct wifi_wiphy* src)
  * \brief Copy a struct wifi_wiphy in an other struct wifi_wiphy. The copy is totally independant in memory from the original
  * \param dest A reference on the destination of the copy
  * \param src A reference on the source of the copy
  * */
-void wiphy_copy(struct wifi_wiphy* dest, struct wifi_wiphy* src);
+void wiphy_copy(struct wifi_wiphy* dest, const struct wifi_wiphy* src);
 /**
  * \fn void del_wiphy_list(struct list_head* l)
  * \brief Clear a list of struct wifi_wiphy and free memory used by each struct wifi_wiphy
@@ -86,11 +86,11 @@ void del_wiphy_list(struct list_head* l);
 
 
 /**
- * \fn void print_if(struct wifi_interface* i)
+ * \fn void print_if(const struct wifi_interface* i)
  * \brief print a struct wifi_interface (used for test)
  * \param i A reference to the struct wifi_interface to print
  * */
-void print_if(struct wifi_interface* i);
+void print_if(const struct wifi_interface* i);
 /**
  * \fn struct wifi_interface* new_if()
  * \brief Allocate memory for a new struct wifi_interface and initialize it
@@ -105,19 +105,19 @@ struct wifi_interface* new_if();
  * */
 char* get_if_type(enum nl80211_iftype i);
 /**
- * \fn struct wifi_interface* clone_if(struct wifi_interface* i)
+ * \fn struct wifi_interface* clone_if(const struct wifi_interface* i)
  * \brief Create a copy of an existing struct wifi_winterface totally indepedant in memory
  * \param i A reference on the struct wifi_interface to copy
  * \return A reference to the new struct wifi_interface
  * */
-struct wifi_interface* clone_if(struct wifi_interface* i);
+struct wifi_interface* clone_if(const struct wifi_interface* i);
 /**
- * \fn void if_copy(struct wifi_interface* dest, struct wifi_interface* src)
+ * \fn void if_copy(struct wifi_interface* dest, const struct wifi_interface* src)
  * \brief Copy a struct wifi_interface in an other struct wifi_interface. The copy is totally independant in memory from the original
  * \param dest A reference on the destination of the copy
  * \param src A reference on the source of the copy
  * */
-void if_copy(struct wifi_interface* dest, struct wifi_interface* src);
+void if_copy(struct wifi_interface* dest, const struct wifi_interface* src);
 /**
  * \fn void del_if(struct wifi_interface* i)
  * \brief Free memory used by a struct wifi_interface
