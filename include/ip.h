@@ -7,6 +7,7 @@
 #ifndef IP_H
 #define IP_H
 #include <sys/types.h>
+#include "libnetlink.h"
 
 struct ip_param{
 	int ifindex;

@@ -101,4 +101,20 @@ u_int8_t hex_to_dec(char h);
  * */
 int mac_addr_str_to_data(u_int8_t* data,const char* str);
 
+
+/**\fn int get_frequency_of_channel(int channel)
+ * \brief return frequency of a channel in 2.4GHz band
+ * \arg channel the number of the channel in range [1,14]
+ * \return the frequency of the channel
+ * */
+int get_frequency_of_channel(int channel);
+
+/**\fn int get_best_channel(const int* tab_chan, int size)
+ * \brief get less used channel number
+ * \arg tab_chan The number of network by channel. Should be filled by wifi_scan_all_frequencies. Can't be NULL
+ * \arg size The size of previous argument
+ * \return less used channel number
+ * */
+int get_best_channel(const int* tab_chan, int size);
+
 #endif //UTIL_H

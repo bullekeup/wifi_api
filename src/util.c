@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
+#include <limits.h>
+
 #include "../include/util.h"
 
 struct nlparam* new_nlparam(enum nl80211_attrs attr, int type, int value_int,const char* value_str){
@@ -99,4 +101,36 @@ int mac_addr_str_to_data(u_int8_t* data,const char* str){
 		pt++;
 	}
 	return 0;
+}
+
+int get_frequency_of_channel(int channel){
+	if(channel>=0 && channel<=13){
+		return 2407+(channel*5);
+	}else if(channel==14){
+		return 2484;
+	}else{
+		return 0;
+	}
+}
+
+int get_best_channel(const int* tab_chan, int size){
+	int oc = INT_MAX;
+	int best_chan = 0;
+	int i, prov;
+	if(size>=14){
+		size=13;
+	}
+	for(i=0;i<size;i++){
+		prov = tab_chan[i]*10;
+		if(i!=0){
+			prov += tab_chan[i-1];
+		}if(i!=size-1){
+			prov += tab_chan[i+1];
+		}
+		if(prov<oc){
+			oc = prov;
+			best_chan = i+1;
+		}
+	}
+	return best_chan;
 }
