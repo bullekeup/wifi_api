@@ -251,7 +251,7 @@ void cmd_interface(int argc, char** argv){
 				//
 			}else if(strncmp(argv[2],"monitor",SIZE_CMD)==0){
 				//create monitor interface
-				err = wifi_create_interface(*argv, wp, NL80211_IFTYPE_MONITOR, &nlstate);
+				err = wifi_create_interface(*argv, NL80211_IFTYPE_MONITOR, wp, &nlstate);
 				if(err<0){
 					printf("error: %s\n",wifi_geterror(err));
 				}
@@ -538,7 +538,7 @@ void cmd_scan(int argc, char** argv){
 		best_chan = get_best_channel(tb_chan, 14);
 		//
 	}else{
-		printf("usage: scan perform\n");
+		printf("usage: scan perform (interface)\n");
 	}
 }
 
@@ -582,9 +582,9 @@ void cmd_network(int argc, char** argv){
 	}else if(strncmp(*argv,"count",SIZE_CMD)==0){
 		//count networks by channel
 		for(int i=0;i<14;i++){
-			printf("channel %i : %i networks",i+1,tb_chan[i]);
+			printf("channel %i : %i networks\n",i+1,tb_chan[i]);
 		}
-		printf("best channel: %i",best_chan);
+		printf("best channel: %i\n",best_chan);
 		//
 	}else{
 		printf("usage:\n\tnetwork show\n\tnetwork show mesh\n\tnetwork show normal\n\tnetwork count\n");

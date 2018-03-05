@@ -140,9 +140,6 @@ int wifi_get_ip_address(u_int8_t* addr, const char* dev, struct rtnl_handle* rth
 	if(err<0){
 		return err;
 	}
-	if(addr[0]==0){
-		return -198;
-	}
 	return 0;
 }
 
